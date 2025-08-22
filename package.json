@@ -1,0 +1,20 @@
+{
+  "name": "scouts-gestion",
+  "version": "1.0.0",
+  "description": "Sistema de gestión para seccional de scouts",
+  "main": "backend/src/server.js",
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd backend && npm run dev",
+    "client": "cd frontend && npm start",
+    "install-all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "build": "cd frontend && npm run build",
+    "start": "cd backend && npm start"
+  },
+  "keywords": ["scouts", "gestion", "mongodb", "express", "react"],
+  "author": "Tu nombre",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  }
+}
