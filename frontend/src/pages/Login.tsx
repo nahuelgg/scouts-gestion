@@ -1,57 +1,59 @@
-import React, { useEffect } from 'react';
-import { Form, Input, Button, Card, Typography, Alert } from 'antd';
-import { UserOutlined, LockOutlined } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
-import { useAppDispatch, useAppSelector } from '../utils/hooks';
-import { login, clearError } from '../store/authSlice';
-import { LoginCredentials } from '../types';
+import React, { useEffect } from 'react'
+import { Form, Input, Button, Card, Typography, Alert } from 'antd'
+import { UserOutlined, LockOutlined } from '@ant-design/icons'
+import { useNavigate } from 'react-router-dom'
+import { useAppDispatch, useAppSelector } from '../utils/hooks'
+import { login, clearError } from '../store/authSlice'
+import { LoginCredentials } from '../types'
 
-const { Title, Text } = Typography;
+const { Title, Text } = Typography
 
 const Login: React.FC = () => {
-  const [form] = Form.useForm();
-  const navigate = useNavigate();
-  const dispatch = useAppDispatch();
-  const { isLoading, error, isAuthenticated } = useAppSelector((state) => state.auth);
+  const [form] = Form.useForm()
+  const navigate = useNavigate()
+  const dispatch = useAppDispatch()
+  const { isLoading, error, isAuthenticated } = useAppSelector(
+    (state) => state.auth
+  )
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/dashboard');
+      navigate('/dashboard')
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate])
 
   useEffect(() => {
     // Limpiar errores al montar el componente
-    dispatch(clearError());
-  }, [dispatch]);
+    dispatch(clearError())
+  }, [dispatch])
 
   const onFinish = async (values: LoginCredentials) => {
-    dispatch(login(values));
-  };
+    dispatch(login(values))
+  }
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: 'linear-gradient(135deg, #1890ff 0%, #096dd9 100%)',
-      padding: '20px'
-    }}>
+    <div
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'linear-gradient(135deg, #1890ff 0%, #096dd9 100%)',
+        padding: '20px',
+      }}
+    >
       <Card
         style={{
           width: '100%',
           maxWidth: 400,
-          boxShadow: '0 8px 24px rgba(0,0,0,0.15)'
+          boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
         }}
       >
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <Title level={2} style={{ color: '#1890ff', marginBottom: 8 }}>
             Sistema Scout
           </Title>
-          <Text type="secondary">
-            Gestión de Seccional
-          </Text>
+          <Text type="secondary">Gestión de Seccional</Text>
         </div>
 
         {error && (
@@ -77,13 +79,13 @@ const Login: React.FC = () => {
             label="Usuario"
             rules={[
               { required: true, message: 'Por favor ingresa tu usuario' },
-              { min: 3, message: 'El usuario debe tener al menos 3 caracteres' }
+              {
+                min: 3,
+                message: 'El usuario debe tener al menos 3 caracteres',
+              },
             ]}
           >
-            <Input
-              prefix={<UserOutlined />}
-              placeholder="Ingresa tu usuario"
-            />
+            <Input prefix={<UserOutlined />} placeholder="Ingresa tu usuario" />
           </Form.Item>
 
           <Form.Item
@@ -91,7 +93,10 @@ const Login: React.FC = () => {
             label="Contraseña"
             rules={[
               { required: true, message: 'Por favor ingresa tu contraseña' },
-              { min: 6, message: 'La contraseña debe tener al menos 6 caracteres' }
+              {
+                min: 6,
+                message: 'La contraseña debe tener al menos 6 caracteres',
+              },
             ]}
           >
             <Input.Password
@@ -120,7 +125,7 @@ const Login: React.FC = () => {
         </div>
       </Card>
     </div>
-  );
-};
+  )
+}
 
-export default Login;
+export default Login

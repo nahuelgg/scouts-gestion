@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react'
 import {
   Row,
   Col,
@@ -9,71 +9,75 @@ import {
   Button,
   Table,
   Tag,
-} from 'antd';
+} from 'antd'
 import {
   TeamOutlined,
   DollarOutlined,
   UserOutlined,
   PlusOutlined,
-} from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
-import { useAppSelector } from '../utils/hooks';
-import { personasAPI, pagosAPI } from '../services/api';
+} from '@ant-design/icons'
+import { useNavigate } from 'react-router-dom'
+import { useAppSelector } from '../utils/hooks'
+import { personasAPI, pagosAPI } from '../services/api'
 
-const { Title } = Typography;
+const { Title } = Typography
 
 interface DashboardStats {
-  totalSocios: number;
-  sociosActivos: number;
-  pagosEsteMes: number;
-  totalRecaudado: number;
+  totalSocios: number
+  sociosActivos: number
+  pagosEsteMes: number
+  totalRecaudado: number
 }
 
 const Dashboard: React.FC = () => {
-  const navigate = useNavigate();
-  const { user } = useAppSelector((state) => state.auth);
+  const navigate = useNavigate()
+  const { user } = useAppSelector((state) => state.auth)
   const [stats, setStats] = useState<DashboardStats>({
     totalSocios: 0,
     sociosActivos: 0,
     pagosEsteMes: 0,
     totalRecaudado: 0,
-  });
-  const [recentPayments, setRecentPayments] = useState([]);
-  const [loading, setLoading] = useState(true);
+  })
+  const [recentPayments, setRecentPayments] = useState([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    loadDashboardData();
-  }, []);
+    loadDashboardData()
+  }, [])
 
   const loadDashboardData = async () => {
     try {
-      setLoading(true);
-      
+      setLoading(true)
+
       // Cargar estadísticas de socios
-      const personasResponse = await personasAPI.getAll({ limit: 1000 });
-      const socios = personasResponse.personas || [];
-      
+      const personasResponse = await personasAPI.getAll({ limit: 1000 })
+      const socios = personasResponse.personas || []
+
       // Cargar pagos recientes
-      const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
-      const pagosResponse = await pagosAPI.getAll({ 
+      const currentMonth = new Date().toISOString().slice(0, 7) // YYYY-MM
+      const pagosResponse = await pagosAPI.getAll({
         limit: 5,
-        mes: currentMonth 
-      });
-      
+        mes: currentMonth,
+      })
+
       setStats({
         totalSocios: socios.length,
         sociosActivos: socios.filter((s: any) => s.activo).length,
         pagosEsteMes: pagosResponse.total || 0,
-        totalRecaudado: pagosResponse.pagos?.reduce((sum: number, pago: any) => sum + pago.monto, 0) || 0,
-      });
-      
-      setRecentPayments(pagosResponse.pagos || []);
+        totalRecaudado:
+          pagosResponse.pagos?.reduce(
+            (sum: number, pago: any) => sum + pago.monto,
+            0
+          ) || 0,
+      })
+
+      setRecentPayments(pagosResponse.pagos || [])
     } catch (error) {
-      console.error('Error cargando datos del dashboard:', error);
+      console.error('Error cargando datos del dashboard:', error)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const paymentColumns = [
     {
@@ -99,14 +103,14 @@ const Dashboard: React.FC = () => {
       dataIndex: 'metodoPago',
       key: 'metodoPago',
       render: (metodo: string) => (
-        <Tag color="blue">
-          {metodo.replace('_', ' ').toUpperCase()}
-        </Tag>
+        <Tag color="blue">{metodo.replace('_', ' ').toUpperCase()}</Tag>
       ),
     },
-  ];
+  ]
 
-  const canManageSocios = ['administrador', 'jefe_de_rama'].includes(user?.rol?.nombre || '');
+  const canManageSocios = ['administrador', 'jefe_de_rama'].includes(
+    user?.rol?.nombre || ''
+  )
 
   return (
     <div>
@@ -181,9 +185,7 @@ const Dashboard: React.FC = () => {
                 >
                   Registrar Pago
                 </Button>
-                <Button
-                  onClick={() => navigate('/socios')}
-                >
+                <Button onClick={() => navigate('/socios')}>
                   Ver Todos los Socios
                 </Button>
               </Space>
@@ -198,10 +200,7 @@ const Dashboard: React.FC = () => {
           <Card
             title="Pagos Recientes"
             extra={
-              <Button 
-                type="link" 
-                onClick={() => navigate('/pagos')}
-              >
+              <Button type="link" onClick={() => navigate('/pagos')}>
                 Ver todos
               </Button>
             }
@@ -213,14 +212,14 @@ const Dashboard: React.FC = () => {
               pagination={false}
               loading={loading}
               locale={{
-                emptyText: 'No hay pagos registrados este mes'
+                emptyText: 'No hay pagos registrados este mes',
               }}
             />
           </Card>
         </Col>
       </Row>
     </div>
-  );
-};
+  )
+}
 
-export default Dashboard;
+export default Dashboard

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react'
 import {
   Table,
   Button,
@@ -11,98 +11,108 @@ import {
   message,
   Tag,
   Tooltip,
-} from 'antd';
+} from 'antd'
+import { ExclamationCircleOutlined } from '@ant-design/icons'
 import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
   SearchOutlined,
   EyeOutlined,
-} from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
-import { useAppDispatch, useAppSelector } from '../utils/hooks';
+} from '@ant-design/icons'
+import { useNavigate } from 'react-router-dom'
+import { useAppDispatch, useAppSelector } from '../utils/hooks'
 import {
   fetchPersonas,
   deletePersona,
   clearError,
-} from '../store/personasSlice';
-import { ramasAPI } from '../services/api';
-import { Persona, Rama } from '../types';
+} from '../store/personasSlice'
+import { ramasAPI } from '../services/api'
+import { Persona, Rama } from '../types'
 
-const { Title } = Typography;
-const { Search } = Input;
-const { Option } = Select;
+const { Title } = Typography
+const { Search } = Input
+const { Option } = Select
 
 const SociosList: React.FC = () => {
-  const navigate = useNavigate();
-  const dispatch = useAppDispatch();
+  const navigate = useNavigate()
+  const dispatch = useAppDispatch()
   const { personas, isLoading, error, currentPage, total } = useAppSelector(
     (state) => state.personas
-  );
-  const { user } = useAppSelector((state) => state.auth);
+  )
+  const { user } = useAppSelector((state) => state.auth)
 
-  const [searchText, setSearchText] = useState('');
-  const [selectedRama, setSelectedRama] = useState<string>('');
-  const [ramas, setRamas] = useState<Rama[]>([]);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [searchText, setSearchText] = useState('')
+  const [selectedRama, setSelectedRama] = useState<string>('')
+  const [ramas, setRamas] = useState<Rama[]>([])
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false)
+  const [personaToDelete, setPersonaToDelete] = useState<Persona | null>(null)
 
-  const canManage = ['administrador', 'jefe_de_rama'].includes(user?.rol?.nombre || '');
-  const canDelete = user?.rol?.nombre === 'administrador';
+  const canManage = ['administrador', 'jefe_de_rama'].includes(
+    user?.rol?.nombre || ''
+  )
+  const canDelete = user?.rol?.nombre === 'administrador'
 
   useEffect(() => {
-    loadRamas();
-  }, []);
+    loadRamas()
+  }, [])
 
   useEffect(() => {
-    loadPersonas();
-  }, [searchText, selectedRama, page, pageSize, dispatch]);
+    loadPersonas()
+  }, [searchText, selectedRama, page, pageSize, dispatch])
 
   useEffect(() => {
     if (error) {
-      message.error(error);
-      dispatch(clearError());
+      message.error(error)
+      dispatch(clearError())
     }
-  }, [error, dispatch]);
+  }, [error, dispatch])
 
   const loadRamas = async () => {
     try {
-      const response = await ramasAPI.getAll();
-      setRamas(response);
+      const response = await ramasAPI.getAll()
+      setRamas(response)
     } catch (error) {
-      console.error('Error cargando ramas:', error);
+      console.error('Error cargando ramas:', error)
     }
-  };
+  }
 
   const loadPersonas = React.useCallback(() => {
     const params: any = {
       page,
       limit: pageSize,
-    };
+    }
 
     if (searchText) {
-      params.search = searchText;
+      params.search = searchText
     }
 
     if (selectedRama) {
-      params.rama = selectedRama;
+      params.rama = selectedRama
     }
 
-    dispatch(fetchPersonas(params));
-  }, [dispatch, page, pageSize, searchText, selectedRama]);
+    dispatch(fetchPersonas(params))
+  }, [dispatch, page, pageSize, searchText, selectedRama])
 
   const handleDelete = (persona: Persona) => {
-    Modal.confirm({
-      title: '¿Estás seguro?',
-      content: `¿Deseas eliminar a ${persona.nombre} ${persona.apellido}?`,
-      okText: 'Sí, eliminar',
-      okType: 'danger',
-      cancelText: 'Cancelar',
-      onOk: () => {
-        dispatch(deletePersona(persona._id));
-      },
-    });
-  };
+    setPersonaToDelete(persona)
+    setDeleteModalVisible(true)
+  }
+
+  const confirmDelete = () => {
+    if (personaToDelete) {
+      dispatch(deletePersona(personaToDelete._id))
+      setDeleteModalVisible(false)
+      setPersonaToDelete(null)
+    }
+  }
+
+  const cancelDelete = () => {
+    setDeleteModalVisible(false)
+    setPersonaToDelete(null)
+  }
 
   const columns = [
     {
@@ -112,17 +122,18 @@ const SociosList: React.FC = () => {
       width: 120,
     },
     {
-      title: 'Nombre',
-      dataIndex: 'nombre',
-      key: 'nombre',
-      sorter: true,
-    },
-    {
       title: 'Apellido',
       dataIndex: 'apellido',
       key: 'apellido',
       sorter: true,
     },
+    {
+      title: 'Nombre',
+      dataIndex: 'nombre',
+      key: 'nombre',
+      sorter: true,
+    },
+
     {
       title: 'Teléfono',
       dataIndex: 'telefono',
@@ -135,18 +146,14 @@ const SociosList: React.FC = () => {
       key: 'rama',
       width: 120,
       render: (rama: string) => {
-        if (!rama) return '-';
+        if (!rama) return '-'
         const colors: { [key: string]: string } = {
-          manada: 'orange',
+          manada: 'brown',
           unidad: 'green',
-          caminantes: 'blue',
+          caminantes: 'yellow',
           rovers: 'purple',
-        };
-        return (
-          <Tag color={colors[rama] || 'default'}>
-            {rama.toUpperCase()}
-          </Tag>
-        );
+        }
+        return <Tag color={colors[rama] || 'default'}>{rama.toUpperCase()}</Tag>
       },
     },
     {
@@ -163,6 +170,7 @@ const SociosList: React.FC = () => {
     {
       title: 'Acciones',
       key: 'actions',
+
       width: 150,
       render: (_: any, record: Persona) => (
         <Space size="small">
@@ -195,11 +203,18 @@ const SociosList: React.FC = () => {
         </Space>
       ),
     },
-  ];
+  ]
 
   return (
     <div>
-      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div
+        style={{
+          marginBottom: 16,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
         <Title level={2}>Gestión de Socios</Title>
         {canManage && (
           <Button
@@ -217,7 +232,7 @@ const SociosList: React.FC = () => {
         <div style={{ marginBottom: 16 }}>
           <Space wrap>
             <Search
-              placeholder="Buscar por nombre, apellido o DNI"
+              placeholder="Buscar por nombre o DNI"
               allowClear
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
@@ -225,7 +240,7 @@ const SociosList: React.FC = () => {
               style={{ width: 300 }}
               enterButton={<SearchOutlined />}
             />
-            
+
             <Select
               placeholder="Filtrar por rama"
               style={{ width: 150 }}
@@ -233,6 +248,9 @@ const SociosList: React.FC = () => {
               value={selectedRama}
               onChange={setSelectedRama}
             >
+              <Option key="todas" value="">
+                Todas las ramas
+              </Option>
               {ramas.map((rama) => (
                 <Option key={rama._id} value={rama._id}>
                   {rama.nombre.charAt(0).toUpperCase() + rama.nombre.slice(1)}
@@ -257,17 +275,43 @@ const SociosList: React.FC = () => {
             showTotal: (total, range) =>
               `${range[0]}-${range[1]} de ${total} socios`,
             onChange: (page, size) => {
-              setPage(page);
+              setPage(page)
               if (size !== pageSize) {
-                setPageSize(size);
+                setPageSize(size)
               }
             },
           }}
           scroll={{ x: 800 }}
         />
       </Card>
-    </div>
-  );
-};
 
-export default SociosList;
+      {/* Modal de confirmación para eliminar */}
+      <Modal
+        title="Confirmar eliminación"
+        open={deleteModalVisible}
+        onOk={confirmDelete}
+        onCancel={cancelDelete}
+        okText="Sí, eliminar"
+        cancelText="Cancelar"
+        okType="danger"
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <ExclamationCircleOutlined
+            style={{ color: '#faad14', fontSize: '22px' }}
+          />
+          <div>
+            <p>¿Estás seguro de que deseas eliminar a:</p>
+            <strong>
+              {personaToDelete?.nombre} {personaToDelete?.apellido}
+            </strong>
+            <p style={{ marginTop: '8px', color: '#666' }}>
+              Esta acción no se puede deshacer.
+            </p>
+          </div>
+        </div>
+      </Modal>
+    </div>
+  )
+}
+
+export default SociosList

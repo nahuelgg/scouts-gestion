@@ -4,17 +4,26 @@
   "description": "Sistema de gestión para seccional de scouts",
   "main": "backend/src/server.js",
   "scripts": {
-    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "dev": "kill-port 3000,3001 && concurrently \"npm run server\" \"npm run client\"",
     "server": "cd backend && npm run dev",
     "client": "cd frontend && npm start",
     "install-all": "npm install && cd backend && npm install && cd ../frontend && npm install",
     "build": "cd frontend && npm run build",
-    "start": "cd backend && npm start"
+    "start": "cd backend && npm start",
+    "clean-ports": "kill-port 3000,3001"
   },
-  "keywords": ["scouts", "gestion", "mongodb", "express", "react"],
+  "keywords": [
+    "scouts",
+    "gestion",
+    "mongodb",
+    "express",
+    "react"
+  ],
   "author": "Tu nombre",
   "license": "MIT",
   "devDependencies": {
-    "concurrently": "^8.2.0"
+    "concurrently": "^8.2.0",
+    "kill-port": "^2.0.1",
+    "nodemon": "^3.0.1"
   }
 }

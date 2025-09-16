@@ -5,13 +5,15 @@
 ¡Felicidades! Tu sistema de gestión para scouts ya está funcionando correctamente.
 
 ### 🌐 URLs de Acceso
+
 - **Frontend (App Web)**: http://localhost:3000
-- **Backend API**: http://localhost:5000/api
-- **Health Check**: http://localhost:5000/api/health
+- **Backend API**: http://localhost:3001/api
+- **Health Check**: http://localhost:3001/api/health
 
 ### 🔐 Credenciales de Acceso
 
 #### Usuario Administrador (Creado automáticamente)
+
 - **Usuario**: `admin`
 - **Contraseña**: `admin123`
 
@@ -25,25 +27,29 @@
 ### 🏗️ Funcionalidades Implementadas
 
 #### ✅ Autenticación
+
 - Login seguro con JWT
 - Protección de rutas
 - Roles y permisos
 
 #### ✅ Gestión de Socios
+
 - Crear, editar, ver y eliminar socios
 - Búsqueda y filtros
 - Asignación a ramas
 - Datos personales completos
 
 #### ✅ Dashboard
+
 - Estadísticas en tiempo real
 - Acciones rápidas
 - Vista general del sistema
 
 #### ✅ Sistema de Ramas
+
 - 4 ramas predefinidas:
   - **Manada** (6-8 años)
-  - **Unidad** (9-14 años) 
+  - **Unidad** (9-14 años)
   - **Caminantes** (15-17 años)
   - **Rovers** (18-21 años)
 
@@ -57,21 +63,25 @@
 ### 👥 Roles del Sistema
 
 #### 🔑 Administrador
+
 - Acceso completo al sistema
 - Gestión de usuarios
 - Configuración del sistema
 - Todas las funciones
 
 #### 👨‍🏫 Jefe de Rama
+
 - Gestión de socios de su rama
 - Registro de pagos
 - Visualización de reportes
 
 #### 👥 Jefe de Grupo
+
 - Visualización de reportes
 - Acceso de solo lectura
 
 #### 👤 Socio
+
 - Acceso limitado (funcionalidad futura)
 
 ### 🛠️ Comandos Útiles
@@ -87,7 +97,7 @@ npm run init-db
 cd backend
 npm run dev
 
-# Solo frontend  
+# Solo frontend
 cd frontend
 npm start
 
@@ -98,6 +108,7 @@ npm run dev
 ### 📊 Probando el Sistema
 
 #### Crear Socios de Ejemplo
+
 Te recomiendo crear algunos socios de prueba:
 
 1. **Juan Pérez** (Manada)
@@ -106,7 +117,7 @@ Te recomiendo crear algunos socios de prueba:
    - Dirección: Av. Libertador 1234, Buenos Aires
 
 2. **María González** (Unidad)
-   - DNI: 87654321  
+   - DNI: 87654321
    - Teléfono: +54 9 11 8765-4321
    - Dirección: Belgrano 567, Buenos Aires
 
@@ -118,14 +129,17 @@ Te recomiendo crear algunos socios de prueba:
 ### 🔧 Solución de Problemas
 
 #### Frontend no carga
+
 - Verifica que el puerto 3000 esté libre
 - Revisa la consola del navegador
 
 #### Backend no conecta
+
 - Verifica que MongoDB esté ejecutándose
 - Revisa el archivo `.env` del backend
 
 #### Base de datos vacía
+
 - Ejecuta `npm run init-db` desde el directorio backend
 
 ### 📞 Próximos Pasos
