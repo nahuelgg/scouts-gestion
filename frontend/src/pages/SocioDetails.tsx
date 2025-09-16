@@ -126,9 +126,15 @@ const SocioDetails: React.FC = () => {
             {currentPersona.email || 'No especificado'}
           </Descriptions.Item>
           <Descriptions.Item label="Dirección">
-            {`${currentPersona.direccion.calle} ${currentPersona.direccion.numero}, 
+            {`${currentPersona.direccion.calle} ${
+              currentPersona.direccion.numero
+            }, 
              ${currentPersona.direccion.ciudad}
-             ${currentPersona.direccion.codigoPostal ? ` (${currentPersona.direccion.codigoPostal})` : ''}`}
+             ${
+               currentPersona.direccion.codigoPostal
+                 ? ` (${currentPersona.direccion.codigoPostal})`
+                 : ''
+             }`}
           </Descriptions.Item>
         </Descriptions>
       </Card>
