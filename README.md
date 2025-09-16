@@ -5,6 +5,7 @@ Sistema web para la gestión de seccionales scout, desarrollado con tecnologías
 ## 🚀 Tecnologías Utilizadas
 
 ### Backend
+
 - **Node.js** con **Express.js**
 - **MongoDB** con **Mongoose**
 - **JWT** para autenticación
@@ -12,6 +13,7 @@ Sistema web para la gestión de seccionales scout, desarrollado con tecnologías
 - **bcryptjs** para hash de contraseñas
 
 ### Frontend
+
 - **React** con **TypeScript**
 - **Ant Design** para UI/UX
 - **Redux Toolkit** para gestión de estado
@@ -21,23 +23,27 @@ Sistema web para la gestión de seccionales scout, desarrollado con tecnologías
 ## 📋 Funcionalidades
 
 ### Autenticación y Autorización
+
 - Sistema de login seguro
 - Roles de usuario (Administrador, Jefe de Rama, Jefe de Grupo, Socio)
 - Protección de rutas según permisos
 
 ### Gestión de Socios
+
 - ✅ Crear, editar, visualizar y eliminar socios
 - ✅ Filtros por rama y búsqueda
 - ✅ Gestión de datos personales y contacto
 - ✅ Asignación a ramas (Manada, Unidad, Caminantes, Rovers)
 
 ### Gestión de Pagos
+
 - 🚧 Registro de pagos mensuales
 - 🚧 Subida de comprobantes
 - 🚧 Seguimiento por socio y período
 - 🚧 Diferentes métodos de pago
 
 ### Panel de Administración
+
 - ✅ Dashboard con estadísticas
 - 🚧 Gestión de usuarios del sistema
 - 🚧 Configuración de ramas
@@ -45,17 +51,20 @@ Sistema web para la gestión de seccionales scout, desarrollado con tecnologías
 ## 🛠️ Instalación y Configuración
 
 ### Prerrequisitos
+
 - **Node.js** (v16 o superior)
 - **MongoDB** (local o remoto)
 - **npm** o **yarn**
 
 ### Paso 1: Clonar el repositorio
+
 ```bash
 git clone <url-del-repositorio>
 cd scouts-gestion
 ```
 
 ### Paso 2: Instalar dependencias
+
 ```bash
 # Instalar dependencias del proyecto principal y subdirectorios
 npm run install-all
@@ -64,8 +73,9 @@ npm run install-all
 ### Paso 3: Configurar variables de entorno
 
 **Backend** (`backend/.env`):
+
 ```env
-PORT=5000
+PORT=3001
 MONGODB_URI=mongodb://localhost:27017/scouts_gestion
 JWT_SECRET=tu_jwt_secret_muy_seguro_aqui
 NODE_ENV=development
@@ -73,21 +83,25 @@ UPLOAD_PATH=./uploads
 ```
 
 **Frontend** (`frontend/.env`):
+
 ```env
-REACT_APP_API_URL=http://localhost:5000/api
+REACT_APP_API_URL=http://localhost:3001/api
 ```
 
 ### Paso 4: Configurar MongoDB
+
 1. Instalar y ejecutar MongoDB localmente, o usar MongoDB Atlas
 2. La base de datos se creará automáticamente al ejecutar el script de inicialización
 
 ### Paso 5: Inicializar la base de datos
+
 ```bash
 cd backend
 npm run init-db
 ```
 
 Este comando creará:
+
 - 4 roles predefinidos
 - 4 ramas (Manada, Unidad, Caminantes, Rovers)
 - Usuario administrador por defecto:
@@ -97,6 +111,7 @@ Este comando creará:
 ### Paso 6: Ejecutar la aplicación
 
 #### Desarrollo (ambos servidores en paralelo)
+
 ```bash
 npm run dev
 ```
@@ -104,12 +119,14 @@ npm run dev
 #### O ejecutar por separado:
 
 **Backend:**
+
 ```bash
 cd backend
 npm run dev
 ```
 
 **Frontend:**
+
 ```bash
 cd frontend
 npm start
@@ -118,18 +135,20 @@ npm start
 ## 🌐 URLs de Acceso
 
 - **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:5000/api
-- **Health Check**: http://localhost:5000/api/health
+- **Backend API**: http://localhost:3001/api
+- **Health Check**: http://localhost:3001/api/health
 
 ## 📱 Uso del Sistema
 
 ### Login Inicial
+
 1. Accede a http://localhost:3000
 2. Usa las credenciales del administrador:
    - Usuario: `admin`
    - Contraseña: `admin123`
 
 ### Gestión de Socios
+
 1. Ve a la sección "Socios"
 2. Haz clic en "Nuevo Socio" para agregar un socio
 3. Completa el formulario con los datos requeridos
@@ -138,20 +157,24 @@ npm start
 ### Estructura de Roles
 
 #### Administrador
+
 - Acceso completo al sistema
 - Gestión de usuarios y configuración
 - Todas las funciones de jefe de rama
 
 #### Jefe de Rama
+
 - Gestión de socios
 - Registro y gestión de pagos
 - Visualización de reportes
 
 #### Jefe de Grupo
+
 - Visualización de reportes
 - Acceso de solo lectura
 
 #### Socio
+
 - Acceso limitado (funcionalidad futura)
 
 ## 📂 Estructura del Proyecto
@@ -208,7 +231,6 @@ cd backend && npm run init-db
   - [ ] Formulario de registro de pagos
   - [ ] Visualización de comprobantes
   - [ ] Reportes de pagos por período
-  
 - [ ] **Dashboard avanzado**
   - [ ] Gráficos de estadísticas
   - [ ] Alertas de pagos pendientes
