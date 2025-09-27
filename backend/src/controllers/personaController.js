@@ -6,12 +6,16 @@ const Rama = require('../models/Rama')
 // @access  Private
 const getPersonas = async (req, res) => {
   try {
-    const { page = 1, limit = 10, search = '', rama = '' } = req.query
+    const { page = 1, limit = 10, search = '', rama = '', dni = '' } = req.query
 
     // Construir filtros - excluir personas eliminadas
     const filter = { deleted: false }
 
-    if (search) {
+    // Filtro por DNI exacto (para usuarios tipo 'socio')
+    if (dni) {
+      filter.dni = dni
+    } else if (search) {
+      // Solo buscar si no hay filtro de DNI específico
       filter.$or = [
         { nombre: { $regex: search, $options: 'i' } },
         { apellido: { $regex: search, $options: 'i' } },
@@ -66,7 +70,7 @@ const getPersonaById = async (req, res) => {
 
 // @desc    Crear nueva persona
 // @route   POST /api/personas
-// @access  Private (jefe_de_rama, administrador)
+// @access  Private (jefe de rama, administrador)
 const createPersona = async (req, res) => {
   try {
     const {
@@ -130,7 +134,7 @@ const createPersona = async (req, res) => {
 
 // @desc    Actualizar persona
 // @route   PUT /api/personas/:id
-// @access  Private (jefe_de_rama, administrador)
+// @access  Private (jefe de rama, administrador)
 const updatePersona = async (req, res) => {
   try {
     const {

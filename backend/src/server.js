@@ -26,7 +26,7 @@ app.use(helmet())
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 100, // Máximo 100 requests por ventana de tiempo
+  max: 1000, // Máximo 1000 requests por ventana de tiempo (aumentado para desarrollo)
   message: 'Demasiadas solicitudes desde esta IP',
 })
 app.use(limiter)
@@ -60,6 +60,7 @@ app.use('/api/personas', personaRoutes)
 app.use('/api/pagos', pagoRoutes)
 app.use('/api/ramas', ramaRoutes)
 app.use('/api/usuarios', usuarioRoutes)
+app.use('/api/roles', require('./routes/roles'))
 
 // Ruta de prueba
 app.get('/api/health', (req, res) => {

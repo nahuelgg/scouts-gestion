@@ -50,10 +50,38 @@ const SociosList: React.FC = () => {
   const [deleteModalVisible, setDeleteModalVisible] = useState(false)
   const [personaToDelete, setPersonaToDelete] = useState<Persona | null>(null)
 
-  const canManage = ['administrador', 'jefe_de_rama'].includes(
+  const canManage = ['administrador', 'jefe de grupo', 'jefe de rama'].includes(
     user?.rol?.nombre || ''
   )
-  const canDelete = user?.rol?.nombre === 'administrador'
+  const canDelete = ['administrador', 'jefe de grupo'].includes(
+    user?.rol?.nombre || ''
+  )
+
+  // Función para verificar si puede gestionar una persona específica
+  const canManagePersona = (persona: Persona) => {
+    // Administrador y Jefe de Grupo pueden gestionar cualquier persona
+    if (['administrador', 'jefe de grupo'].includes(user?.rol?.nombre || '')) {
+      return true
+    }
+
+    // Jefe de Rama solo puede gestionar personas de su rama asignada
+    if (user?.rol?.nombre === 'jefe de rama') {
+      // Si el jefe de rama no tiene persona asignada con rama, no puede gestionar nada
+      if (!user.persona?.rama) {
+        return false
+      }
+
+      // Si la persona no tiene rama asignada, no puede ser gestionada por jefe de rama
+      if (!persona.rama) {
+        return false
+      }
+
+      // Verificar que la rama de la persona coincida con la rama del jefe
+      return persona.rama._id === user.persona.rama._id
+    }
+
+    return false
+  }
 
   useEffect(() => {
     loadRamas()
@@ -61,14 +89,14 @@ const SociosList: React.FC = () => {
 
   useEffect(() => {
     loadPersonas()
-  }, [searchText, selectedRama, page, pageSize, dispatch])
+  }, [searchText, selectedRama, page, pageSize]) // Removido dispatch
 
   useEffect(() => {
     if (error) {
       message.error(error)
       dispatch(clearError())
     }
-  }, [error, dispatch])
+  }, [error]) // Removido dispatch
 
   const loadRamas = async () => {
     try {
@@ -85,16 +113,34 @@ const SociosList: React.FC = () => {
       limit: pageSize,
     }
 
-    if (searchText) {
-      params.search = searchText
-    }
+    const userRole = user?.rol?.nombre
+    const fullAccessRoles = ['administrador', 'jefe de grupo', 'jefe de rama']
 
-    if (selectedRama) {
-      params.rama = selectedRama
+    // Para usuarios con acceso restringido, filtrar automáticamente por su DNI
+    if (!userRole || !fullAccessRoles.includes(userRole)) {
+      if (user?.persona?.dni) {
+        params.dni = user.persona.dni
+      }
+    } else {
+      // Para roles con acceso completo, aplicar filtros normales
+      if (searchText) {
+        params.search = searchText
+      }
+
+      if (selectedRama) {
+        params.rama = selectedRama
+      }
     }
 
     dispatch(fetchPersonas(params))
-  }, [dispatch, page, pageSize, searchText, selectedRama])
+  }, [
+    page,
+    pageSize,
+    searchText,
+    selectedRama,
+    user?.rol?.nombre,
+    user?.persona?.dni,
+  ])
 
   const handleDelete = (persona: Persona) => {
     setPersonaToDelete(persona)
@@ -174,14 +220,16 @@ const SociosList: React.FC = () => {
       width: 150,
       render: (_: any, record: Persona) => (
         <Space size="small">
-          <Tooltip title="Ver detalles">
-            <Button
-              type="text"
-              icon={<EyeOutlined />}
-              onClick={() => navigate(`/socios/${record._id}`)}
-            />
-          </Tooltip>
-          {canManage && (
+          {canManagePersona(record) && (
+            <Tooltip title="Ver detalles">
+              <Button
+                type="text"
+                icon={<EyeOutlined />}
+                onClick={() => navigate(`/socios/${record._id}`)}
+              />
+            </Tooltip>
+          )}
+          {canManagePersona(record) && (
             <Tooltip title="Editar">
               <Button
                 type="text"
@@ -190,7 +238,7 @@ const SociosList: React.FC = () => {
               />
             </Tooltip>
           )}
-          {canDelete && (
+          {canDelete && canManagePersona(record) && (
             <Tooltip title="Eliminar">
               <Button
                 type="text"
@@ -228,37 +276,47 @@ const SociosList: React.FC = () => {
       </div>
 
       <Card>
-        {/* Filtros */}
-        <div style={{ marginBottom: 16 }}>
-          <Space wrap>
-            <Search
-              placeholder="Buscar por nombre o DNI"
-              allowClear
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-              onSearch={loadPersonas}
-              style={{ width: 300 }}
-              enterButton={<SearchOutlined />}
-            />
+        {/* Filtros - Solo visible para roles con acceso completo */}
+        {(() => {
+          const userRole = user?.rol?.nombre
+          const fullAccessRoles = [
+            'administrador',
+            'jefe de grupo',
+            'jefe de rama',
+          ]
+          return userRole && fullAccessRoles.includes(userRole)
+        })() && (
+          <div style={{ marginBottom: 16 }}>
+            <Space wrap>
+              <Search
+                placeholder="Buscar por nombre o DNI"
+                allowClear
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                onSearch={loadPersonas}
+                style={{ width: 300 }}
+                enterButton={<SearchOutlined />}
+              />
 
-            <Select
-              placeholder="Filtrar por rama"
-              style={{ width: 150 }}
-              allowClear
-              value={selectedRama}
-              onChange={setSelectedRama}
-            >
-              <Option key="todas" value="">
-                Todas las ramas
-              </Option>
-              {ramas.map((rama) => (
-                <Option key={rama._id} value={rama._id}>
-                  {rama.nombre.charAt(0).toUpperCase() + rama.nombre.slice(1)}
+              <Select
+                placeholder="Filtrar por rama"
+                style={{ width: 150 }}
+                allowClear
+                value={selectedRama}
+                onChange={setSelectedRama}
+              >
+                <Option key="todas" value="">
+                  Todas las ramas
                 </Option>
-              ))}
-            </Select>
-          </Space>
-        </div>
+                {ramas.map((rama) => (
+                  <Option key={rama._id} value={rama._id}>
+                    {rama.nombre.charAt(0).toUpperCase() + rama.nombre.slice(1)}
+                  </Option>
+                ))}
+              </Select>
+            </Space>
+          </div>
+        )}
 
         {/* Tabla */}
         <Table

@@ -1,5 +1,10 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
-import { Persona, PersonaFormData } from '../types'
+import { 
+  Persona, 
+  PersonaFormData, 
+  FetchPersonasParams, 
+  ApiError
+} from '../types'
 import { personasAPI } from '../services/api'
 
 interface PersonasState {
@@ -25,13 +30,14 @@ const initialState: PersonasState = {
 // Async thunks
 export const fetchPersonas = createAsyncThunk(
   'personas/fetchPersonas',
-  async (params: any = {}, { rejectWithValue }) => {
+  async (params: FetchPersonasParams = {}, { rejectWithValue }) => {
     try {
       const response = await personasAPI.getAll(params)
       return response
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const apiError = error as ApiError
       return rejectWithValue(
-        error.response?.data?.message || 'Error obteniendo personas'
+        apiError.response?.data?.message || 'Error obteniendo personas'
       )
     }
   }
@@ -43,9 +49,10 @@ export const fetchPersonaById = createAsyncThunk(
     try {
       const response = await personasAPI.getById(id)
       return response
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const apiError = error as ApiError
       return rejectWithValue(
-        error.response?.data?.message || 'Error obteniendo persona'
+        apiError.response?.data?.message || 'Error obteniendo persona'
       )
     }
   }
@@ -57,9 +64,10 @@ export const createPersona = createAsyncThunk(
     try {
       const response = await personasAPI.create(data)
       return response
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const apiError = error as ApiError
       return rejectWithValue(
-        error.response?.data?.message || 'Error creando persona'
+        apiError.response?.data?.message || 'Error creando persona'
       )
     }
   }
@@ -74,9 +82,10 @@ export const updatePersona = createAsyncThunk(
     try {
       const response = await personasAPI.update(id, data)
       return response
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const apiError = error as ApiError
       return rejectWithValue(
-        error.response?.data?.message || 'Error actualizando persona'
+        apiError.response?.data?.message || 'Error actualizando persona'
       )
     }
   }
@@ -88,9 +97,10 @@ export const deletePersona = createAsyncThunk(
     try {
       await personasAPI.delete(id)
       return id
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const apiError = error as ApiError
       return rejectWithValue(
-        error.response?.data?.message || 'Error eliminando persona'
+        apiError.response?.data?.message || 'Error eliminando persona'
       )
     }
   }

@@ -1,5 +1,5 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
-import { User, LoginCredentials } from '../types'
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
+import { User, LoginCredentials, ApiError } from '../types'
 import { authAPI } from '../services/api'
 
 interface AuthState {
@@ -32,8 +32,9 @@ export const login = createAsyncThunk(
       localStorage.setItem('user', JSON.stringify(response))
 
       return response
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Error de login')
+    } catch (error: unknown) {
+      const apiError = error as ApiError
+      return rejectWithValue(apiError.response?.data?.message || 'Error de login')
     }
   }
 )
@@ -44,9 +45,10 @@ export const getProfile = createAsyncThunk(
     try {
       const response = await authAPI.getProfile()
       return response
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const apiError = error as ApiError
       return rejectWithValue(
-        error.response?.data?.message || 'Error obteniendo perfil'
+        apiError.response?.data?.message || 'Error obteniendo perfil'
       )
     }
   }
@@ -61,9 +63,10 @@ export const changePassword = createAsyncThunk(
     try {
       const response = await authAPI.changePassword(data)
       return response
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const apiError = error as ApiError
       return rejectWithValue(
-        error.response?.data?.message || 'Error cambiando contraseña'
+        apiError.response?.data?.message || 'Error cambiando contraseña'
       )
     }
   }

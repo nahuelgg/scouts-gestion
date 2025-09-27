@@ -31,7 +31,7 @@ export interface Persona {
 
 export interface Rol {
   _id: string
-  nombre: 'administrador' | 'jefe_de_rama' | 'jefe_de_grupo' | 'socio'
+  nombre: 'administrador' | 'jefe de rama' | 'jefe de grupo' | 'socio'
   descripcion: string
   permisos: string[]
   createdAt: Date
@@ -121,4 +121,72 @@ export interface PagoFormData {
     | 'tarjeta_credito'
   observaciones?: string
   comprobante?: File
+}
+
+// Tipos para parámetros de API
+export interface FetchPersonasParams {
+  page?: number
+  limit?: number
+  rama?: string
+  search?: string
+}
+
+export interface FetchPagosParams {
+  page?: number
+  limit?: number
+  socio?: string
+  año?: number
+  mes?: string
+}
+
+// Interfaces para formularios adicionales
+export interface RamaFormData {
+  nombre: 'manada' | 'unidad' | 'caminantes' | 'rovers'
+  descripcion: string
+  edadMinima: number
+  edadMaxima: number
+  jefeRama?: string
+}
+
+// Interfaces para usuarios
+export interface UsuarioFormData {
+  username: string
+  password: string
+  persona: string
+  rol: string
+  activo?: boolean
+}
+
+// Tipos para parámetros de API de usuarios
+export interface FetchUsuariosParams {
+  page?: number
+  limit?: number
+  rol?: string
+  activo?: boolean
+  search?: string
+}
+
+// Tipos para respuestas específicas de usuarios
+export interface UsuarioResponse {
+  usuario: User
+  message: string
+}
+
+export interface UsuariosListResponse {
+  usuarios: User[]
+  totalPages: number
+  currentPage: number
+  total: number
+}
+
+// Tipos para manejo de errores de API
+export interface ApiError {
+  response?: {
+    data?: {
+      message?: string
+      error?: string
+    }
+    status?: number
+  }
+  message?: string
 }

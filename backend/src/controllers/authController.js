@@ -26,7 +26,10 @@ const login = async (req, res) => {
 
     // Buscar usuario
     const usuario = await Usuario.findOne({ username })
-      .populate('persona')
+      .populate({
+        path: 'persona',
+        populate: { path: 'rama' }
+      })
       .populate('rol')
 
     if (!usuario) {
@@ -66,7 +69,10 @@ const login = async (req, res) => {
 const getProfile = async (req, res) => {
   try {
     const usuario = await Usuario.findById(req.user._id)
-      .populate('persona')
+      .populate({
+        path: 'persona',
+        populate: { path: 'rama' }
+      })
       .populate('rol')
       .select('-password')
 

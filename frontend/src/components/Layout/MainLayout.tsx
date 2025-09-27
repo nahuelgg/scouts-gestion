@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import {
   Layout,
   Menu,
@@ -62,36 +62,62 @@ const MainLayout: React.FC = () => {
     },
   ]
 
-  const menuItems = [
-    {
-      key: '/dashboard',
-      icon: <DashboardOutlined />,
-      label: 'Dashboard',
-      onClick: () => navigate('/dashboard'),
-    },
-    {
-      key: '/socios',
-      icon: <TeamOutlined />,
-      label: 'Socios',
-      onClick: () => navigate('/socios'),
-    },
-    {
-      key: '/pagos',
-      icon: <DollarOutlined />,
-      label: 'Pagos',
-      onClick: () => navigate('/pagos'),
-    },
-  ]
+  const menuItems = useMemo(() => {
+    const userRole = user?.rol?.nombre
+    const fullAccessRoles = ['administrador', 'jefe de grupo', 'jefe de rama']
 
-  // Agregar elementos del menú según el rol
-  if (user?.rol?.nombre === 'administrador') {
-    menuItems.push({
-      key: '/usuarios',
-      icon: <SettingOutlined />,
-      label: 'Usuarios',
-      onClick: () => navigate('/usuarios'),
-    })
-  }
+    // Para usuarios con acceso restringido (todos EXCEPTO admin, jefe de grupo, jefe de rama)
+    if (!userRole || !fullAccessRoles.includes(userRole)) {
+      return [
+        {
+          key: '/socios',
+          icon: <TeamOutlined />,
+          label: 'Socios',
+          onClick: () => navigate('/socios'),
+        },
+        {
+          key: '/pagos',
+          icon: <DollarOutlined />,
+          label: 'Pagos',
+          onClick: () => navigate('/pagos'),
+        },
+      ]
+    }
+
+    // Para roles con acceso completo (admin, jefe de grupo, jefe de rama)
+    const baseItems = [
+      {
+        key: '/dashboard',
+        icon: <DashboardOutlined />,
+        label: 'Dashboard',
+        onClick: () => navigate('/dashboard'),
+      },
+      {
+        key: '/socios',
+        icon: <TeamOutlined />,
+        label: 'Socios',
+        onClick: () => navigate('/socios'),
+      },
+      {
+        key: '/pagos',
+        icon: <DollarOutlined />,
+        label: 'Pagos',
+        onClick: () => navigate('/pagos'),
+      },
+    ]
+
+    // Solo admin y jefe de grupo pueden ver usuarios
+    if (userRole === 'administrador' || userRole === 'jefe de grupo') {
+      baseItems.push({
+        key: '/usuarios',
+        icon: <SettingOutlined />,
+        label: 'Usuarios',
+        onClick: () => navigate('/usuarios'),
+      })
+    }
+
+    return baseItems
+  }, [user?.rol?.nombre, navigate])
 
   const getSelectedKey = () => {
     const path = location.pathname
