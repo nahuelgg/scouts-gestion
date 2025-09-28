@@ -12,7 +12,6 @@ const { protect, authorize, requirePermission, checkRamaAccess, requireFullAcces
 
 const router = express.Router()
 
-// Rutas principales
 router
   .route('/')
   .get(protect, requirePermission('gestionar_pagos'), getPagos)
@@ -36,7 +35,8 @@ router
   )
   .delete(protect, requireFullAccess, deletePago)
 
-// Ruta para resumen de pagos por socio
-router.get('/resumen/:socioId', protect, getResumenPagosSocio)
+router
+  .route('/resumen/:socioId')
+  .get(protect, getResumenPagosSocio)
 
 module.exports = router

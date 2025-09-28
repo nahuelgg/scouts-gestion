@@ -9,7 +9,13 @@ const { protect } = require('../middleware/auth')
 const router = express.Router()
 
 router.post('/login', login)
-router.get('/profile', protect, getProfile)
-router.put('/change-password', protect, changePassword)
+
+router
+  .route('/profile')
+  .get(protect, getProfile)
+
+router
+  .route('/change-password')
+  .put(protect, changePassword)
 
 module.exports = router
