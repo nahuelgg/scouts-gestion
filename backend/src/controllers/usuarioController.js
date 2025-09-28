@@ -1,6 +1,9 @@
-const Usuario = require('../models/Usuario');
-const bcrypt = require('bcryptjs');
+const Usuario = require('../models/Usuario')
+const bcrypt = require('bcryptjs')
 
+// @desc    Obtener todos los usuarios
+// @route   GET /api/usuarios
+// @access  Private (administrador, jefe de grupo)
 const getUsuarios = async (req, res) => {
   try {
     const { page = 1, limit = 10, rol, activo, search } = req.query;
@@ -38,14 +41,14 @@ const getUsuarios = async (req, res) => {
       total
     });
   } catch (error) {
-    console.error('Error obteniendo usuarios:', error);
-    res.status(500).json({
-      message: 'Error obteniendo usuarios',
-      error: error.message
-    });
+    console.error(error)
+    res.status(500).json({ message: 'Error del servidor' })
   }
 };
 
+// @desc    Obtener un usuario por ID
+// @route   GET /api/usuarios/:id
+// @access  Private (administrador, jefe de grupo)
 const getUsuarioById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -66,14 +69,14 @@ const getUsuarioById = async (req, res) => {
     
     res.json(usuario);
   } catch (error) {
-    console.error('Error obteniendo usuario:', error);
-    res.status(500).json({
-      message: 'Error obteniendo usuario',
-      error: error.message
-    });
+    console.error(error)
+    res.status(500).json({ message: 'Error del servidor' })
   }
 };
 
+// @desc    Crear nuevo usuario
+// @route   POST /api/usuarios
+// @access  Private (administrador, jefe de grupo)
 const createUsuario = async (req, res) => {
   try {
     const { username, password, persona, rol, activo = true } = req.body;
@@ -118,14 +121,14 @@ const createUsuario = async (req, res) => {
       usuario: usuarioCompleto
     });
   } catch (error) {
-    console.error('Error creando usuario:', error);
-    res.status(500).json({
-      message: 'Error creando usuario',
-      error: error.message
-    });
+    console.error(error)
+    res.status(500).json({ message: 'Error del servidor' })
   }
 };
 
+// @desc    Actualizar usuario
+// @route   PUT /api/usuarios/:id
+// @access  Private (administrador, jefe de grupo)
 const updateUsuario = async (req, res) => {
   try {
     const { id } = req.params;
@@ -186,14 +189,14 @@ const updateUsuario = async (req, res) => {
       usuario: usuarioActualizado
     });
   } catch (error) {
-    console.error('Error actualizando usuario:', error);
-    res.status(500).json({
-      message: 'Error actualizando usuario',
-      error: error.message
-    });
+    console.error(error)
+    res.status(500).json({ message: 'Error del servidor' })
   }
 };
 
+// @desc    Desactivar usuario (soft delete)
+// @route   DELETE /api/usuarios/:id
+// @access  Private (administrador, jefe de grupo)
 const deleteUsuario = async (req, res) => {
   try {
     const { id } = req.params;
@@ -209,11 +212,8 @@ const deleteUsuario = async (req, res) => {
     
     res.json({ message: 'Usuario desactivado exitosamente' });
   } catch (error) {
-    console.error('Error desactivando usuario:', error);
-    res.status(500).json({
-      message: 'Error desactivando usuario',
-      error: error.message
-    });
+    console.error(error)
+    res.status(500).json({ message: 'Error del servidor' })
   }
 };
 
@@ -223,4 +223,4 @@ module.exports = {
   createUsuario,
   updateUsuario,
   deleteUsuario
-};
+}
