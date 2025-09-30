@@ -34,7 +34,9 @@ export const login = createAsyncThunk(
       return response
     } catch (error: unknown) {
       const apiError = error as ApiError
-      return rejectWithValue(apiError.response?.data?.message || 'Error de login')
+      return rejectWithValue(
+        apiError.response?.data?.message || 'Error de login'
+      )
     }
   }
 )

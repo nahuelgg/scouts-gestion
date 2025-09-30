@@ -1,13 +1,13 @@
-const express = require('express');
-const router = express.Router();
+const express = require('express')
+const router = express.Router()
 const {
   getUsuarios,
   getUsuarioById,
   createUsuario,
   updateUsuario,
-  deleteUsuario
-} = require('../controllers/usuarioController');
-const { protect, requireFullAccess } = require('../middleware/auth');
+  deleteUsuario,
+} = require('../controllers/usuarioController')
+const { protect, requireFullAccess } = require('../middleware/auth')
 
 router
   .route('/')
@@ -20,4 +20,4 @@ router
   .put(protect, requireFullAccess, updateUsuario)
   .delete(protect, requireFullAccess, deleteUsuario)
 
-module.exports = router;
+module.exports = router

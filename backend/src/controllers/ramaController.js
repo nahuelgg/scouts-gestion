@@ -119,21 +119,21 @@ const deleteRama = async (req, res) => {
 
     // Verificar si hay personas asignadas a esta rama
     const Persona = require('../models/Persona')
-    const personasEnRama = await Persona.countDocuments({ 
-      rama: req.params.id, 
-      deleted: false 
+    const personasEnRama = await Persona.countDocuments({
+      rama: req.params.id,
+      deleted: false,
     })
 
     if (personasEnRama > 0) {
-      return res.status(400).json({ 
-        message: `No se puede eliminar la rama. Hay ${personasEnRama} persona(s) asignada(s) a esta rama.`
+      return res.status(400).json({
+        message: `No se puede eliminar la rama. Hay ${personasEnRama} persona(s) asignada(s) a esta rama.`,
       })
     }
 
     await Rama.findByIdAndDelete(req.params.id)
 
     res.json({
-      message: 'Rama eliminada exitosamente'
+      message: 'Rama eliminada exitosamente',
     })
   } catch (error) {
     console.error(error)
@@ -146,5 +146,5 @@ module.exports = {
   getRamaById,
   createRama,
   updateRama,
-  deleteRama
+  deleteRama,
 }

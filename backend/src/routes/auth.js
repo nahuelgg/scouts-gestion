@@ -10,12 +10,8 @@ const router = express.Router()
 
 router.post('/login', login)
 
-router
-  .route('/profile')
-  .get(protect, getProfile)
+router.route('/profile').get(protect, getProfile)
 
-router
-  .route('/change-password')
-  .put(protect, changePassword)
+router.route('/change-password').put(protect, changePassword)
 
 module.exports = router

@@ -8,7 +8,13 @@ const {
   getResumenPagosSocio,
   upload,
 } = require('../controllers/pagoController')
-const { protect, authorize, requirePermission, checkRamaAccess, requireFullAccess } = require('../middleware/auth')
+const {
+  protect,
+  authorize,
+  requirePermission,
+  checkRamaAccess,
+  requireFullAccess,
+} = require('../middleware/auth')
 
 const router = express.Router()
 
@@ -25,7 +31,12 @@ router
 
 router
   .route('/:id')
-  .get(protect, requirePermission('gestionar_pagos'), checkRamaAccess, getPagoById)
+  .get(
+    protect,
+    requirePermission('gestionar_pagos'),
+    checkRamaAccess,
+    getPagoById
+  )
   .put(
     protect,
     requirePermission('gestionar_pagos'),
@@ -35,8 +46,6 @@ router
   )
   .delete(protect, requireFullAccess, deletePago)
 
-router
-  .route('/resumen/:socioId')
-  .get(protect, getResumenPagosSocio)
+router.route('/resumen/:socioId').get(protect, getResumenPagosSocio)
 
 module.exports = router

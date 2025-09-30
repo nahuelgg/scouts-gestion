@@ -21,9 +21,9 @@ const rolSchema = new mongoose.Schema(
           'gestionar_pagos',
           'ver_reportes',
           'administrar_sistema',
-          'acceso_completo',          // Administrador y Jefe de Grupo
-          'acceso_rama_propia',       // Jefe de Rama solo a su rama
-          'acceso_limitado',          // Socio solo a su información
+          'acceso_completo', // Administrador y Jefe de Grupo
+          'acceso_rama_propia', // Jefe de Rama solo a su rama
+          'acceso_limitado', // Socio solo a su información
         ],
       },
     ],

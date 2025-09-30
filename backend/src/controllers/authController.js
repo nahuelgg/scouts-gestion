@@ -28,7 +28,7 @@ const login = async (req, res) => {
     const usuario = await Usuario.findOne({ username })
       .populate({
         path: 'persona',
-        populate: { path: 'rama' }
+        populate: { path: 'rama' },
       })
       .populate('rol')
 
@@ -71,7 +71,7 @@ const getProfile = async (req, res) => {
     const usuario = await Usuario.findById(req.user._id)
       .populate({
         path: 'persona',
-        populate: { path: 'rama' }
+        populate: { path: 'rama' },
       })
       .populate('rol')
       .select('-password')
@@ -97,11 +97,9 @@ const changePassword = async (req, res) => {
     }
 
     if (newPassword.length < 6) {
-      return res
-        .status(400)
-        .json({
-          message: 'La nueva contraseña debe tener al menos 6 caracteres',
-        })
+      return res.status(400).json({
+        message: 'La nueva contraseña debe tener al menos 6 caracteres',
+      })
     }
 
     const usuario = await Usuario.findById(req.user._id)

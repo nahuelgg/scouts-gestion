@@ -20,8 +20,8 @@ const protect = async (req, res, next) => {
         .populate({
           path: 'persona',
           populate: {
-            path: 'rama'
-          }
+            path: 'rama',
+          },
         })
         .populate('rol')
         .select('-password')
@@ -97,11 +97,18 @@ const checkRamaAccess = async (req, res, next) => {
   }
 
   // Jefe de Rama solo puede acceder a su rama
-  if (userRole === 'jefe de rama' && userPermissions.includes('acceso_rama_propia')) {
+  if (
+    userRole === 'jefe de rama' &&
+    userPermissions.includes('acceso_rama_propia')
+  ) {
     // Verificar si está accediendo a datos de su rama
     const ramaId = req.params.ramaId || req.body.rama || req.query.rama
-    
-    if (ramaId && req.user.persona?.rama && ramaId !== req.user.persona.rama._id.toString()) {
+
+    if (
+      ramaId &&
+      req.user.persona?.rama &&
+      ramaId !== req.user.persona.rama._id.toString()
+    ) {
       return res.status(403).json({
         message: 'Solo puede acceder a datos de su rama asignada',
       })
@@ -111,10 +118,14 @@ const checkRamaAccess = async (req, res, next) => {
     if (req.params.id || req.body.personaId) {
       const Persona = require('../models/Persona')
       const personaId = req.params.id || req.body.personaId
-      
+
       try {
         const persona = await Persona.findById(personaId)
-        if (persona && persona.rama && persona.rama.toString() !== req.user.persona.rama._id.toString()) {
+        if (
+          persona &&
+          persona.rama &&
+          persona.rama.toString() !== req.user.persona.rama._id.toString()
+        ) {
           return res.status(403).json({
             message: 'Solo puede gestionar personas de su rama asignada',
           })
@@ -159,7 +170,7 @@ const checkRestrictedAccess = async (req, res, next) => {
 
   // Para todos los demás roles (incluido 'socio'), aplicar restricciones
   // Solo pueden acceder a su propia información basada en su DNI
-  
+
   // Para GET de personas, forzar filtro por DNI del usuario
   if (req.method === 'GET' && req.baseUrl === '/api/personas') {
     if (!req.query.dni) {
@@ -187,7 +198,10 @@ const checkRestrictedAccess = async (req, res, next) => {
   }
 
   // Para modificaciones (PUT, POST, DELETE), denegar acceso
-  if (['PUT', 'POST', 'DELETE'].includes(req.method) && req.baseUrl === '/api/personas') {
+  if (
+    ['PUT', 'POST', 'DELETE'].includes(req.method) &&
+    req.baseUrl === '/api/personas'
+  ) {
     return res.status(403).json({
       message: 'No tiene permisos para modificar datos',
     })
@@ -196,11 +210,11 @@ const checkRestrictedAccess = async (req, res, next) => {
   next()
 }
 
-module.exports = { 
-  protect, 
-  authorize, 
-  requirePermission, 
-  checkRamaAccess, 
+module.exports = {
+  protect,
+  authorize,
+  requirePermission,
+  checkRamaAccess,
   requireFullAccess,
-  checkRestrictedAccess 
+  checkRestrictedAccess,
 }

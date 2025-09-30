@@ -4,7 +4,7 @@ const {
   getRamaById,
   createRama,
   updateRama,
-  deleteRama
+  deleteRama,
 } = require('../controllers/ramaController')
 const { protect, authorize } = require('../middleware/auth')
 
