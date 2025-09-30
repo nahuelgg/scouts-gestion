@@ -1,9 +1,9 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
-import { 
-  Persona, 
-  PersonaFormData, 
-  FetchPersonasParams, 
-  ApiError
+import {
+  Persona,
+  PersonaFormData,
+  FetchPersonasParams,
+  ApiError,
 } from '../types'
 import { personasAPI } from '../services/api'
 
