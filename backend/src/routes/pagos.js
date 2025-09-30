@@ -8,31 +8,33 @@ const {
   getResumenPagosSocio,
   upload,
 } = require('../controllers/pagoController')
-const { protect, authorize } = require('../middleware/auth')
+const { protect, authorize, requirePermission, checkRamaAccess, requireFullAccess } = require('../middleware/auth')
 
 const router = express.Router()
 
 // Rutas principales
 router
   .route('/')
-  .get(protect, getPagos)
+  .get(protect, requirePermission('gestionar_pagos'), getPagos)
   .post(
     protect,
-    authorize('jefe_de_rama', 'administrador'),
+    requirePermission('gestionar_pagos'),
+    checkRamaAccess,
     upload.single('comprobante'),
     createPago
   )
 
 router
   .route('/:id')
-  .get(protect, getPagoById)
+  .get(protect, requirePermission('gestionar_pagos'), checkRamaAccess, getPagoById)
   .put(
     protect,
-    authorize('jefe_de_rama', 'administrador'),
+    requirePermission('gestionar_pagos'),
+    checkRamaAccess,
     upload.single('comprobante'),
     updatePago
   )
-  .delete(protect, authorize('administrador'), deletePago)
+  .delete(protect, requireFullAccess, deletePago)
 
 // Ruta para resumen de pagos por socio
 router.get('/resumen/:socioId', protect, getResumenPagosSocio)

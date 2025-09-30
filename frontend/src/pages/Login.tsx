@@ -25,7 +25,7 @@ const Login: React.FC = () => {
   useEffect(() => {
     // Limpiar errores al montar el componente
     dispatch(clearError())
-  }, [dispatch])
+  }, []) // Removido dispatch
 
   const onFinish = async (values: LoginCredentials) => {
     dispatch(login(values))

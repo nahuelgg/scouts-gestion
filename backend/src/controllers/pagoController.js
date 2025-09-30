@@ -122,7 +122,7 @@ const getPagoById = async (req, res) => {
 
 // @desc    Crear nuevo pago
 // @route   POST /api/pagos
-// @access  Private (jefe_de_rama, administrador)
+// @access  Private (jefe de rama, administrador)
 const createPago = async (req, res) => {
   try {
     const {
@@ -196,7 +196,7 @@ const createPago = async (req, res) => {
 
 // @desc    Actualizar pago
 // @route   PUT /api/pagos/:id
-// @access  Private (jefe_de_rama, administrador)
+// @access  Private (jefe de rama, administrador)
 const updatePago = async (req, res) => {
   try {
     const { monto, fechaPago, metodoPago, observaciones, estado } = req.body

@@ -27,9 +27,37 @@ const SocioDetails: React.FC = () => {
   )
   const { user } = useAppSelector((state) => state.auth)
 
-  const canManage = ['administrador', 'jefe_de_rama'].includes(
+  const canManage = ['administrador', 'jefe de grupo', 'jefe de rama'].includes(
     user?.rol?.nombre || ''
   )
+
+  // Función para verificar si puede gestionar esta persona específica
+  const canManageThisPersona = () => {
+    if (!currentPersona) return false
+
+    // Administrador y Jefe de Grupo pueden gestionar cualquier persona
+    if (['administrador', 'jefe de grupo'].includes(user?.rol?.nombre || '')) {
+      return true
+    }
+
+    // Jefe de Rama solo puede gestionar personas de su rama asignada
+    if (user?.rol?.nombre === 'jefe de rama') {
+      // Si el jefe de rama no tiene persona asignada con rama, no puede gestionar nada
+      if (!user.persona?.rama) {
+        return false
+      }
+
+      // Si la persona no tiene rama asignada, no puede ser gestionada por jefe de rama
+      if (!currentPersona.rama) {
+        return false
+      }
+
+      // Verificar que la rama de la persona coincida con la rama del jefe
+      return currentPersona.rama._id === user.persona.rama._id
+    }
+
+    return false
+  }
 
   useEffect(() => {
     if (id) {
@@ -76,7 +104,7 @@ const SocioDetails: React.FC = () => {
           >
             Volver
           </Button>
-          {canManage && (
+          {canManageThisPersona() && (
             <Button
               type="primary"
               icon={<EditOutlined />}

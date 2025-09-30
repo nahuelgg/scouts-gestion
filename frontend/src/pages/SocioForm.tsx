@@ -52,7 +52,7 @@ const SocioForm: React.FC = () => {
     return () => {
       dispatch(clearCurrentPersona())
     }
-  }, [dispatch, id, isEditing])
+  }, [id, isEditing]) // Removido dispatch
 
   useEffect(() => {
     if (currentPersona && isEditing) {
@@ -80,7 +80,7 @@ const SocioForm: React.FC = () => {
       message.error(error)
       dispatch(clearError())
     }
-  }, [error, dispatch])
+  }, [error]) // Removido dispatch
 
   const loadRamas = async () => {
     try {

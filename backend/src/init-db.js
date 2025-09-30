@@ -3,14 +3,16 @@ const bcrypt = require('bcryptjs')
 require('dotenv').config()
 
 const connectDB = require('./config/database')
-const Rol = require('./models/Rol')
-const Rama = require('./models/Rama')
-const Persona = require('./models/Persona')
-const Usuario = require('./models/Usuario')
 
 const initializeDatabase = async () => {
   try {
     await connectDB()
+
+    // Importar modelos después de conectar a la DB
+    const Rol = require('./models/Rol')
+    const Rama = require('./models/Rama')
+    const Persona = require('./models/Persona')
+    const Usuario = require('./models/Usuario')
 
     // Limpiar datos existentes (opcional)
     console.log('Limpiando datos existentes...')
@@ -31,22 +33,38 @@ const initializeDatabase = async () => {
           'gestionar_pagos',
           'ver_reportes',
           'administrar_sistema',
+          'acceso_completo',
         ],
       },
       {
-        nombre: 'jefe_de_rama',
-        descripcion: 'Jefe de rama con permisos para gestionar socios y pagos',
-        permisos: ['gestionar_socios', 'gestionar_pagos', 'ver_reportes'],
+        nombre: 'jefe de grupo',
+        descripcion: 'Jefe de grupo con acceso completo al sistema',
+        permisos: [
+          'gestionar_usuarios',
+          'gestionar_socios',
+          'gestionar_pagos',
+          'ver_reportes',
+          'administrar_sistema',
+          'acceso_completo',
+        ],
       },
       {
-        nombre: 'jefe_de_grupo',
-        descripcion: 'Jefe de grupo con permisos limitados',
-        permisos: ['ver_reportes'],
+        nombre: 'jefe de rama',
+        descripcion: 'Jefe de rama con acceso limitado a su rama',
+        permisos: [
+          'gestionar_socios',
+          'gestionar_pagos',
+          'ver_reportes',
+          'acceso_rama_propia',
+        ],
       },
       {
         nombre: 'socio',
-        descripcion: 'Socio del grupo scout',
-        permisos: [],
+        descripcion: 'Socio del grupo scout con acceso limitado',
+        permisos: [
+          'ver_reportes',
+          'acceso_limitado',
+        ],
       },
     ]
 

@@ -108,9 +108,11 @@ const Dashboard: React.FC = () => {
     },
   ]
 
-  const canManageSocios = ['administrador', 'jefe_de_rama'].includes(
-    user?.rol?.nombre || ''
-  )
+  const canManageSocios = [
+    'administrador',
+    'jefe de grupo',
+    'jefe de rama',
+  ].includes(user?.rol?.nombre || '')
 
   return (
     <div>
