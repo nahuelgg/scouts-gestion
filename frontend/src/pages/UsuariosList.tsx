@@ -19,12 +19,14 @@ import {
   EditOutlined,
   DeleteOutlined,
   EyeOutlined,
+  UndoOutlined,
 } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../utils/hooks'
 import {
   fetchUsuarios,
   deleteUsuario,
+  restoreUsuario,
   clearError,
 } from '../store/usuariosSlice'
 import { User } from '../types'
@@ -41,11 +43,17 @@ const UsuariosList: React.FC = () => {
   const { usuarios, isLoading, error } = useAppSelector(
     (state) => state.usuarios
   )
+  const { user } = useAppSelector((state) => state.auth)
 
   const [searchText, setSearchText] = useState('')
   const [filteredUsuarios, setFilteredUsuarios] = useState<User[]>([])
   const [selectedRol, setSelectedRol] = useState('')
   const [selectedStatus, setSelectedStatus] = useState('')
+  const [showDeleted, setShowDeleted] = useState(false)
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false)
+  const [userToDelete, setUserToDelete] = useState<User | null>(null)
+  const [restoreModalVisible, setRestoreModalVisible] = useState(false)
+  const [userToRestore, setUserToRestore] = useState<User | null>(null)
 
   useEffect(() => {
     loadUsuarios()
@@ -98,22 +106,89 @@ const UsuariosList: React.FC = () => {
     dispatch(fetchUsuarios())
   }
 
+  const canDeleteUser = (targetUser: User) => {
+    if (!user) return false
+
+    // Solo administrador y jefe de grupo pueden eliminar usuarios
+    const allowedRoles = ['administrador', 'jefe de grupo']
+    const userRole = user.rol?.nombre
+
+    if (!allowedRoles.includes(userRole)) {
+      return false
+    }
+
+    // No puede eliminarse a sí mismo
+    if (user._id === targetUser._id) {
+      return false
+    }
+
+    // Administrador puede eliminar cualquier usuario excepto otros administradores
+    if (userRole === 'administrador') {
+      return targetUser.rol?.nombre !== 'administrador'
+    }
+
+    // Jefe de grupo solo puede eliminar socios
+    if (userRole === 'jefe de grupo') {
+      return targetUser.rol?.nombre === 'socio'
+    }
+
+    return false
+  }
+
   const handleDelete = (usuario: User) => {
-    Modal.confirm({
-      title: '¿Estás seguro?',
-      content: `¿Deseas eliminar el usuario "${usuario.username}"? Esta acción no se puede deshacer.`,
-      okText: 'Sí, eliminar',
-      okType: 'danger',
-      cancelText: 'Cancelar',
-      onOk: async () => {
-        try {
-          await dispatch(deleteUsuario(usuario._id)).unwrap()
-          message.success('Usuario eliminado exitosamente')
-        } catch (error) {
-          // Error manejado por el slice
-        }
-      },
-    })
+    if (!canDeleteUser(usuario)) {
+      message.error('No tienes permisos para eliminar este usuario')
+      return
+    }
+
+    setUserToDelete(usuario)
+    setDeleteModalVisible(true)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!userToDelete) return
+
+    try {
+      await dispatch(deleteUsuario(userToDelete._id)).unwrap()
+      message.success('Usuario eliminado exitosamente')
+      setDeleteModalVisible(false)
+      setUserToDelete(null)
+    } catch (error) {
+      message.error(error?.toString() || 'Error eliminando usuario')
+    }
+  }
+
+  const handleCancelDelete = () => {
+    setDeleteModalVisible(false)
+    setUserToDelete(null)
+  }
+
+  const handleRestore = (usuario: User) => {
+    if (!canDeleteUser(usuario)) {
+      message.error('No tienes permisos para restaurar este usuario')
+      return
+    }
+
+    setUserToRestore(usuario)
+    setRestoreModalVisible(true)
+  }
+
+  const handleConfirmRestore = async () => {
+    if (!userToRestore) return
+
+    try {
+      await dispatch(restoreUsuario(userToRestore._id)).unwrap()
+      message.success('Usuario restaurado exitosamente')
+      setRestoreModalVisible(false)
+      setUserToRestore(null)
+    } catch (error) {
+      message.error('Error restaurando usuario')
+    }
+  }
+
+  const handleCancelRestore = () => {
+    setRestoreModalVisible(false)
+    setUserToRestore(null)
   }
 
   const getRolColor = (rol: string) => {
@@ -201,11 +276,26 @@ const UsuariosList: React.FC = () => {
       title: 'Estado',
       key: 'activo',
       render: (record: User) => (
-        <Tag color={record.activo ? 'green' : 'red'}>
-          {record.activo ? 'Activo' : 'Inactivo'}
-        </Tag>
+        <Space>
+          {record.deleted ? (
+            <Tag color="red">Eliminado</Tag>
+          ) : record.activo ? (
+            <Tag color="green">Activo</Tag>
+          ) : (
+            <Tag color="orange">Inactivo</Tag>
+          )}
+          {record.deleted && record.deletedAt && (
+            <small style={{ color: '#999' }}>
+              {dayjs(record.deletedAt).format('DD/MM/YYYY')}
+            </small>
+          )}
+        </Space>
       ),
-      sorter: (a: User, b: User) => Number(b.activo) - Number(a.activo),
+      sorter: (a: User, b: User) => {
+        if (a.deleted && !b.deleted) return 1
+        if (!a.deleted && b.deleted) return -1
+        return a.activo === b.activo ? 0 : a.activo ? -1 : 1
+      },
     },
     {
       title: 'Último Login',
@@ -235,21 +325,39 @@ const UsuariosList: React.FC = () => {
               onClick={() => navigate(`/usuarios/${record._id}/detalles`)}
             />
           </Tooltip>
-          <Tooltip title="Editar">
-            <Button
-              type="link"
-              icon={<EditOutlined />}
-              onClick={() => navigate(`/usuarios/${record._id}/editar`)}
-            />
-          </Tooltip>
-          <Tooltip title="Eliminar">
-            <Button
-              type="link"
-              danger
-              icon={<DeleteOutlined />}
-              onClick={() => handleDelete(record)}
-            />
-          </Tooltip>
+
+          {!record.deleted && (
+            <>
+              <Tooltip title="Editar">
+                <Button
+                  type="link"
+                  icon={<EditOutlined />}
+                  onClick={() => navigate(`/usuarios/${record._id}/editar`)}
+                />
+              </Tooltip>
+              {canDeleteUser(record) && (
+                <Tooltip title="Eliminar">
+                  <Button
+                    type="link"
+                    danger
+                    icon={<DeleteOutlined />}
+                    onClick={() => handleDelete(record)}
+                  />
+                </Tooltip>
+              )}
+            </>
+          )}
+
+          {record.deleted && canDeleteUser(record) && (
+            <Tooltip title="Restaurar">
+              <Button
+                type="link"
+                style={{ color: '#52c41a' }}
+                icon={<UndoOutlined />}
+                onClick={() => handleRestore(record)}
+              />
+            </Tooltip>
+          )}
         </Space>
       ),
     },
@@ -371,6 +479,39 @@ const UsuariosList: React.FC = () => {
           </Col>
         </Row>
       </Card>
+
+      {/* Modal de confirmación para eliminar usuario */}
+      <Modal
+        title="¿Estás seguro?"
+        open={deleteModalVisible}
+        onOk={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+        okText="Sí, eliminar"
+        cancelText="Cancelar"
+        okType="danger"
+        confirmLoading={isLoading}
+      >
+        <p>
+          ¿Deseas eliminar el usuario "{userToDelete?.username}"? El usuario se
+          mantendrá en el historial del sistema pero no podrá acceder.
+        </p>
+      </Modal>
+
+      {/* Modal de confirmación para restaurar usuario */}
+      <Modal
+        title="¿Restaurar usuario?"
+        open={restoreModalVisible}
+        onOk={handleConfirmRestore}
+        onCancel={handleCancelRestore}
+        okText="Sí, restaurar"
+        cancelText="Cancelar"
+        confirmLoading={isLoading}
+      >
+        <p>
+          ¿Deseas restaurar el usuario "{userToRestore?.username}"? Volverá a
+          tener acceso al sistema.
+        </p>
+      </Modal>
     </div>
   )
 }

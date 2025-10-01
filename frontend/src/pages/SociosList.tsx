@@ -12,7 +12,7 @@ import {
   Tag,
   Tooltip,
 } from 'antd'
-import { ExclamationCircleOutlined } from '@ant-design/icons'
+import { ExclamationCircleOutlined, UndoOutlined } from '@ant-design/icons'
 import {
   PlusOutlined,
   EditOutlined,
@@ -21,10 +21,12 @@ import {
   EyeOutlined,
 } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
+import dayjs from 'dayjs'
 import { useAppDispatch, useAppSelector } from '../utils/hooks'
 import {
   fetchPersonas,
   deletePersona,
+  restorePersona,
   clearError,
 } from '../store/personasSlice'
 import { ramasAPI } from '../services/api'
@@ -49,6 +51,8 @@ const SociosList: React.FC = () => {
   const [pageSize, setPageSize] = useState(10)
   const [deleteModalVisible, setDeleteModalVisible] = useState(false)
   const [personaToDelete, setPersonaToDelete] = useState<Persona | null>(null)
+  const [restoreModalVisible, setRestoreModalVisible] = useState(false)
+  const [personaToRestore, setPersonaToRestore] = useState<Persona | null>(null)
 
   const canManage = ['administrador', 'jefe de grupo', 'jefe de rama'].includes(
     user?.rol?.nombre || ''
@@ -56,6 +60,11 @@ const SociosList: React.FC = () => {
   const canDelete = ['administrador', 'jefe de grupo'].includes(
     user?.rol?.nombre || ''
   )
+
+  // Función para validar si puede eliminar/restaurar una persona
+  const canDeletePersona = (persona: Persona) => {
+    return ['administrador', 'jefe de grupo'].includes(user?.rol?.nombre || '')
+  }
 
   // Función para verificar si puede gestionar una persona específica
   const canManagePersona = (persona: Persona) => {
@@ -132,7 +141,7 @@ const SociosList: React.FC = () => {
       }
     }
 
-    dispatch(fetchPersonas(params))
+    dispatch(fetchPersonas({ ...params, includeDeleted: true }))
   }, [
     page,
     pageSize,
@@ -158,6 +167,29 @@ const SociosList: React.FC = () => {
   const cancelDelete = () => {
     setDeleteModalVisible(false)
     setPersonaToDelete(null)
+  }
+
+  const handleRestore = (persona: Persona) => {
+    setPersonaToRestore(persona)
+    setRestoreModalVisible(true)
+  }
+
+  const confirmRestore = async () => {
+    if (personaToRestore) {
+      try {
+        await dispatch(restorePersona(personaToRestore._id)).unwrap()
+        message.success('Socio restaurado exitosamente')
+        setRestoreModalVisible(false)
+        setPersonaToRestore(null)
+      } catch (error) {
+        message.error('Error restaurando socio')
+      }
+    }
+  }
+
+  const cancelRestore = () => {
+    setRestoreModalVisible(false)
+    setPersonaToRestore(null)
   }
 
   const columns = [
@@ -206,12 +238,28 @@ const SociosList: React.FC = () => {
       title: 'Estado',
       dataIndex: 'activo',
       key: 'activo',
-      width: 100,
-      render: (activo: boolean) => (
-        <Tag color={activo ? 'success' : 'default'}>
-          {activo ? 'Activo' : 'Inactivo'}
-        </Tag>
+      width: 120,
+      render: (activo: boolean, record: Persona) => (
+        <Space>
+          {record.deleted ? (
+            <Tag color="red">Eliminado</Tag>
+          ) : (
+            <Tag color={activo ? 'success' : 'default'}>
+              {activo ? 'Activo' : 'Inactivo'}
+            </Tag>
+          )}
+          {record.deleted && record.deletedAt && (
+            <small style={{ color: '#999' }}>
+              {dayjs(record.deletedAt).format('DD/MM/YYYY')}
+            </small>
+          )}
+        </Space>
       ),
+      sorter: (a: Persona, b: Persona) => {
+        if (a.deleted && !b.deleted) return 1
+        if (!a.deleted && b.deleted) return -1
+        return 0
+      },
     },
     {
       title: 'Acciones',
@@ -229,7 +277,7 @@ const SociosList: React.FC = () => {
               />
             </Tooltip>
           )}
-          {canManagePersona(record) && (
+          {canManagePersona(record) && !record.deleted && (
             <Tooltip title="Editar">
               <Button
                 type="text"
@@ -238,13 +286,23 @@ const SociosList: React.FC = () => {
               />
             </Tooltip>
           )}
-          {canDelete && canManagePersona(record) && (
+          {!record.deleted && canDeletePersona(record) && (
             <Tooltip title="Eliminar">
               <Button
                 type="text"
                 danger
                 icon={<DeleteOutlined />}
                 onClick={() => handleDelete(record)}
+              />
+            </Tooltip>
+          )}
+          {record.deleted && canDeletePersona(record) && (
+            <Tooltip title="Restaurar">
+              <Button
+                type="text"
+                style={{ color: '#52c41a' }}
+                icon={<UndoOutlined />}
+                onClick={() => handleRestore(record)}
               />
             </Tooltip>
           )}
@@ -364,6 +422,30 @@ const SociosList: React.FC = () => {
             </strong>
             <p style={{ marginTop: '8px', color: '#666' }}>
               Esta acción no se puede deshacer.
+            </p>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal de confirmación para restaurar */}
+      <Modal
+        title="Confirmar restauración"
+        open={restoreModalVisible}
+        onOk={confirmRestore}
+        onCancel={cancelRestore}
+        okText="Sí, restaurar"
+        cancelText="Cancelar"
+        okType="primary"
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <UndoOutlined style={{ color: '#52c41a', fontSize: '22px' }} />
+          <div>
+            <p>¿Estás seguro de que deseas restaurar a:</p>
+            <strong>
+              {personaToRestore?.nombre} {personaToRestore?.apellido}
+            </strong>
+            <p style={{ marginTop: '8px', color: '#666' }}>
+              El socio volverá a estar disponible en el sistema.
             </p>
           </div>
         </div>

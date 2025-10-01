@@ -115,16 +115,17 @@ const checkRamaAccess = async (req, res, next) => {
     }
 
     // Si está gestionando una persona, verificar que pertenezca a su rama
-    if (req.params.id || req.body.personaId) {
+    if (req.params.id || req.body.personaId || req.body.socio) {
       const Persona = require('../models/Persona')
-      const personaId = req.params.id || req.body.personaId
+      const personaId = req.params.id || req.body.personaId || req.body.socio
 
       try {
-        const persona = await Persona.findById(personaId)
+        const persona = await Persona.findById(personaId).populate('rama')
+
         if (
           persona &&
           persona.rama &&
-          persona.rama.toString() !== req.user.persona.rama._id.toString()
+          persona.rama._id.toString() !== req.user.persona.rama._id.toString()
         ) {
           return res.status(403).json({
             message: 'Solo puede gestionar personas de su rama asignada',

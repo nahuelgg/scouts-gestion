@@ -56,10 +56,17 @@ const getPagos = async (req, res) => {
       metodoPago = '',
       desde = '',
       hasta = '',
+      includeDeleted = true,
     } = req.query
 
     // Construir filtros
-    const filter = {}
+    let filter = {}
+
+    // Por defecto mostrar todos (incluidos eliminados)
+    // Solo excluir eliminados si se solicita específicamente
+    if (includeDeleted === 'false') {
+      filter.deleted = { $ne: true }
+    }
 
     if (socio) {
       filter.socio = socio
@@ -80,8 +87,30 @@ const getPagos = async (req, res) => {
     }
 
     const pagos = await Pago.find(filter)
-      .populate('socio', 'nombre apellido dni')
-      .populate('registradoPor', 'username')
+      .populate({
+        path: 'socio',
+        select: 'nombre apellido dni',
+        populate: {
+          path: 'rama',
+          select: 'nombre',
+        },
+      })
+      .populate({
+        path: 'registradoPor',
+        select: 'username',
+        populate: {
+          path: 'persona',
+          select: 'nombre apellido',
+        },
+      })
+      .populate({
+        path: 'modificadoPor',
+        select: 'username',
+        populate: {
+          path: 'persona',
+          select: 'nombre apellido',
+        },
+      })
       .sort({ fechaPago: -1 })
       .limit(limit * 1)
       .skip((page - 1) * limit)
@@ -106,8 +135,29 @@ const getPagos = async (req, res) => {
 const getPagoById = async (req, res) => {
   try {
     const pago = await Pago.findById(req.params.id)
-      .populate('socio')
-      .populate('registradoPor', 'username')
+      .populate({
+        path: 'socio',
+        populate: {
+          path: 'rama',
+          select: 'nombre',
+        },
+      })
+      .populate({
+        path: 'registradoPor',
+        select: 'username',
+        populate: {
+          path: 'persona',
+          select: 'nombre apellido',
+        },
+      })
+      .populate({
+        path: 'modificadoPor',
+        select: 'username',
+        populate: {
+          path: 'persona',
+          select: 'nombre apellido',
+        },
+      })
 
     if (!pago) {
       return res.status(404).json({ message: 'Pago no encontrado' })
@@ -142,24 +192,28 @@ const createPago = async (req, res) => {
       })
     }
 
+    // Validar que el monto sea un número válido
+    const montoNumerico = parseFloat(monto)
+    if (
+      isNaN(montoNumerico) ||
+      montoNumerico <= 0 ||
+      !Number.isFinite(montoNumerico)
+    ) {
+      return res.status(400).json({
+        message: 'El monto debe ser un número válido mayor a 0',
+      })
+    }
+
     // Verificar que el socio existe
     const socioExistente = await Persona.findById(socio)
     if (!socioExistente) {
       return res.status(400).json({ message: 'Socio no encontrado' })
     }
 
-    // Verificar si ya existe un pago para este socio en este mes
-    const pagoExistente = await Pago.findOne({ socio, mesCorrespondiente })
-    if (pagoExistente) {
-      return res.status(400).json({
-        message: 'Ya existe un pago registrado para este socio en este mes',
-      })
-    }
-
     // Crear objeto de pago
     const pagoData = {
       socio,
-      monto: parseFloat(monto),
+      monto: montoNumerico,
       fechaPago: fechaPago || new Date(),
       mesCorrespondiente,
       metodoPago,
@@ -181,8 +235,22 @@ const createPago = async (req, res) => {
 
     const pago = await Pago.create(pagoData)
     const pagoCreado = await Pago.findById(pago._id)
-      .populate('socio', 'nombre apellido dni')
-      .populate('registradoPor', 'username')
+      .populate({
+        path: 'socio',
+        select: 'nombre apellido dni',
+        populate: {
+          path: 'rama',
+          select: 'nombre',
+        },
+      })
+      .populate({
+        path: 'registradoPor',
+        select: 'username',
+        populate: {
+          path: 'persona',
+          select: 'nombre apellido',
+        },
+      })
 
     res.status(201).json({
       message: 'Pago registrado exitosamente',
@@ -208,11 +276,26 @@ const updatePago = async (req, res) => {
     }
 
     // Actualizar campos
-    if (monto) pago.monto = parseFloat(monto)
+    if (monto) {
+      const montoNumerico = parseFloat(monto)
+      if (
+        isNaN(montoNumerico) ||
+        montoNumerico <= 0 ||
+        !Number.isFinite(montoNumerico)
+      ) {
+        return res.status(400).json({
+          message: 'El monto debe ser un número válido mayor a 0',
+        })
+      }
+      pago.monto = montoNumerico
+    }
     if (fechaPago) pago.fechaPago = fechaPago
     if (metodoPago) pago.metodoPago = metodoPago
     if (observaciones !== undefined) pago.observaciones = observaciones
     if (estado) pago.estado = estado
+
+    // Registrar quién modificó el pago
+    pago.modificadoPor = req.user._id
 
     // Si hay nuevo archivo de comprobante
     if (req.file) {
@@ -240,8 +323,30 @@ const updatePago = async (req, res) => {
     await pago.save()
 
     const pagoActualizado = await Pago.findById(pago._id)
-      .populate('socio', 'nombre apellido dni')
-      .populate('registradoPor', 'username')
+      .populate({
+        path: 'socio',
+        select: 'nombre apellido dni',
+        populate: {
+          path: 'rama',
+          select: 'nombre',
+        },
+      })
+      .populate({
+        path: 'registradoPor',
+        select: 'username',
+        populate: {
+          path: 'persona',
+          select: 'nombre apellido',
+        },
+      })
+      .populate({
+        path: 'modificadoPor',
+        select: 'username',
+        populate: {
+          path: 'persona',
+          select: 'nombre apellido',
+        },
+      })
 
     res.json({
       message: 'Pago actualizado exitosamente',
@@ -264,20 +369,64 @@ const deletePago = async (req, res) => {
       return res.status(404).json({ message: 'Pago no encontrado' })
     }
 
-    // Eliminar archivo de comprobante si existe
-    if (pago.comprobante && pago.comprobante.path) {
-      const filePath = path.join(
-        process.env.UPLOAD_PATH || './uploads',
-        pago.comprobante.path
-      )
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath)
-      }
+    if (pago.deleted) {
+      return res.status(400).json({ message: 'El pago ya está eliminado' })
     }
 
-    await Pago.findByIdAndDelete(req.params.id)
+    // Eliminación lógica - NO eliminar archivo de comprobante
+    pago.deleted = true
+    pago.deletedAt = new Date()
+    pago.deletedBy = req.user._id
 
-    res.json({ message: 'Pago eliminado exitosamente' })
+    await pago.save()
+
+    // Obtener el pago actualizado con datos poblados
+    const pagoEliminado = await Pago.findById(req.params.id)
+      .populate('socio', 'nombre apellido dni rama')
+      .populate('registradoPor', 'username')
+      .populate('deletedBy', 'username')
+
+    res.json({
+      message: 'Pago eliminado exitosamente',
+      pago: pagoEliminado,
+    })
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ message: 'Error del servidor' })
+  }
+}
+
+// @desc    Restaurar pago eliminado
+// @route   PATCH /api/pagos/:id/restore
+// @access  Private (administrador)
+const restorePago = async (req, res) => {
+  try {
+    const pago = await Pago.findById(req.params.id)
+
+    if (!pago) {
+      return res.status(404).json({ message: 'Pago no encontrado' })
+    }
+
+    if (!pago.deleted) {
+      return res.status(400).json({ message: 'El pago no está eliminado' })
+    }
+
+    // Restaurar el pago
+    pago.deleted = false
+    pago.deletedAt = undefined
+    pago.deletedBy = undefined
+
+    await pago.save()
+
+    // Obtener el pago restaurado con datos poblados
+    const pagoRestaurado = await Pago.findById(req.params.id)
+      .populate('socio', 'nombre apellido dni rama')
+      .populate('registradoPor', 'username')
+
+    res.json({
+      message: 'Pago restaurado exitosamente',
+      pago: pagoRestaurado,
+    })
   } catch (error) {
     console.error(error)
     res.status(500).json({ message: 'Error del servidor' })
@@ -320,6 +469,7 @@ module.exports = {
   createPago,
   updatePago,
   deletePago,
+  restorePago,
   getResumenPagosSocio,
   upload,
 }

@@ -10,7 +10,13 @@ const pagoSchema = new mongoose.Schema(
     monto: {
       type: Number,
       required: true,
-      min: 0,
+      min: [0.01, 'El monto debe ser mayor a 0'],
+      validate: {
+        validator: function (value) {
+          return Number.isFinite(value) && value > 0
+        },
+        message: 'El monto debe ser un número válido mayor a 0',
+      },
     },
     fechaPago: {
       type: Date,
@@ -43,10 +49,25 @@ const pagoSchema = new mongoose.Schema(
       ref: 'Usuario',
       required: true,
     },
+    modificadoPor: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Usuario',
+    },
     estado: {
       type: String,
       enum: ['pendiente', 'confirmado', 'rechazado'],
       default: 'confirmado',
+    },
+    deleted: {
+      type: Boolean,
+      default: false,
+    },
+    deletedAt: {
+      type: Date,
+    },
+    deletedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Usuario',
     },
   },
   {
@@ -55,7 +76,7 @@ const pagoSchema = new mongoose.Schema(
 )
 
 // Índices para búsquedas eficientes
-pagoSchema.index({ socio: 1, mesCorrespondiente: 1 }, { unique: true })
+pagoSchema.index({ socio: 1, mesCorrespondiente: 1 }) // Removido unique: true
 pagoSchema.index({ fechaPago: -1 })
 pagoSchema.index({ mesCorrespondiente: 1 })
 

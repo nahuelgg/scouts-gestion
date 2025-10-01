@@ -6,9 +6,22 @@ const bcrypt = require('bcryptjs')
 // @access  Private (administrador, jefe de grupo)
 const getUsuarios = async (req, res) => {
   try {
-    const { page = 1, limit = 10, rol, activo, search } = req.query
+    const {
+      page = 1,
+      limit = 10,
+      rol,
+      activo,
+      search,
+      includeDeleted = true,
+    } = req.query
 
     let filter = {}
+
+    // Por defecto mostrar todos (incluidos eliminados)
+    // Solo excluir eliminados si se solicita específicamente
+    if (includeDeleted === 'false') {
+      filter.deleted = { $ne: true }
+    }
 
     if (rol && rol !== '') {
       filter.rol = rol
@@ -24,8 +37,16 @@ const getUsuarios = async (req, res) => {
     }
 
     const usuarios = await Usuario.find(filter)
-      .populate('persona', 'nombre apellido dni telefono email')
+      .populate({
+        path: 'persona',
+        select: 'nombre apellido dni telefono email',
+        populate: {
+          path: 'rama',
+          select: 'nombre',
+        },
+      })
       .populate('rol', 'nombre descripcion permisos')
+      .populate('deletedBy', 'username')
       .sort({ username: 1 })
       .limit(limit * 1)
       .skip((page - 1) * limit)
@@ -202,16 +223,126 @@ const deleteUsuario = async (req, res) => {
   try {
     const { id } = req.params
 
-    const usuario = await Usuario.findById(id)
+    const usuario = await Usuario.findById(id).populate('rol', 'nombre')
     if (!usuario) {
       return res.status(404).json({ message: 'Usuario no encontrado' })
     }
 
-    // Soft delete - marcar como inactivo
+    if (usuario.deleted) {
+      return res.status(400).json({ message: 'El usuario ya está eliminado' })
+    }
+
+    // Validar que no se elimine a sí mismo
+    if (usuario._id.toString() === req.user._id.toString()) {
+      return res.status(400).json({
+        message: 'No puedes eliminar tu propio usuario',
+      })
+    }
+
+    // Jefe de grupo no puede eliminar administradores
+    if (
+      req.user.rol.nombre === 'jefe de grupo' &&
+      usuario.rol.nombre === 'administrador'
+    ) {
+      return res.status(403).json({
+        message: 'No tienes permisos para eliminar administradores',
+      })
+    }
+
+    // Verificar que no sea el último administrador
+    if (usuario.rol.nombre === 'administrador') {
+      const adminCount = await Usuario.countDocuments({
+        rol: usuario.rol._id,
+        deleted: { $ne: true },
+      })
+
+      if (adminCount <= 1) {
+        return res.status(400).json({
+          message: 'No se puede eliminar el último administrador del sistema',
+        })
+      }
+    }
+
+    // Eliminación lógica
+    usuario.deleted = true
+    usuario.deletedAt = new Date()
+    usuario.deletedBy = req.user._id
     usuario.activo = false
+
     await usuario.save()
 
-    res.json({ message: 'Usuario desactivado exitosamente' })
+    // Obtener el usuario actualizado con datos poblados
+    const usuarioEliminado = await Usuario.findById(id)
+      .populate({
+        path: 'persona',
+        populate: {
+          path: 'rama',
+          select: 'nombre',
+        },
+      })
+      .populate('rol', 'nombre descripcion')
+      .populate('deletedBy', 'username')
+
+    res.json({
+      message: 'Usuario eliminado exitosamente',
+      usuario: usuarioEliminado,
+    })
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ message: 'Error del servidor' })
+  }
+}
+
+// @desc    Restaurar usuario eliminado
+// @route   PATCH /api/usuarios/:id/restore
+// @access  Private (administrador)
+const restoreUsuario = async (req, res) => {
+  try {
+    const usuario = await Usuario.findById(req.params.id)
+
+    if (!usuario) {
+      return res.status(404).json({ message: 'Usuario no encontrado' })
+    }
+
+    if (!usuario.deleted) {
+      return res.status(400).json({ message: 'El usuario no está eliminado' })
+    }
+
+    // Verificar que el username no esté siendo usado por otro usuario activo
+    const usernameExistente = await Usuario.findOne({
+      username: usuario.username,
+      _id: { $ne: req.params.id },
+      deleted: { $ne: true },
+    })
+
+    if (usernameExistente) {
+      return res.status(400).json({
+        message: 'No se puede restaurar: el username ya está en uso',
+      })
+    }
+
+    // Restaurar usuario
+    usuario.deleted = false
+    usuario.deletedAt = undefined
+    usuario.deletedBy = undefined
+    usuario.activo = true
+
+    await usuario.save()
+
+    const usuarioRestaurado = await Usuario.findById(usuario._id)
+      .populate({
+        path: 'persona',
+        populate: {
+          path: 'rama',
+          select: 'nombre',
+        },
+      })
+      .populate('rol', 'nombre descripcion')
+
+    res.json({
+      message: 'Usuario restaurado exitosamente',
+      usuario: usuarioRestaurado,
+    })
   } catch (error) {
     console.error(error)
     res.status(500).json({ message: 'Error del servidor' })
@@ -224,4 +355,5 @@ module.exports = {
   createUsuario,
   updateUsuario,
   deleteUsuario,
+  restoreUsuario,
 }

@@ -36,3 +36,14 @@
     transform: rotate(360deg);
   }
 }
+
+/* Estilos para filas eliminadas */
+.deleted-row {
+  background-color: #fff2f0 !important;
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+.deleted-row:hover {
+  background-color: #ffebe7 !important;
+}

@@ -6,6 +6,9 @@ export interface User {
   activo: boolean
   ultimoLogin?: Date
   token?: string
+  deleted?: boolean
+  deletedAt?: Date
+  deletedBy?: User
 }
 
 export interface Persona {
@@ -25,6 +28,9 @@ export interface Persona {
   rama?: Rama
   funcion: 'ayudante' | 'beneficiario' | 'educador'
   activo: boolean
+  deleted?: boolean
+  deletedAt?: Date
+  deletedBy?: string
   createdAt: Date
   updatedAt: Date
 }
@@ -69,7 +75,11 @@ export interface Pago {
   }
   observaciones?: string
   registradoPor: User
+  modificadoPor?: User
   estado: 'pendiente' | 'confirmado' | 'rechazado'
+  deleted?: boolean
+  deletedAt?: Date
+  deletedBy?: User
   createdAt: Date
   updatedAt: Date
 }
@@ -129,6 +139,7 @@ export interface FetchPersonasParams {
   limit?: number
   rama?: string
   search?: string
+  includeDeleted?: boolean
 }
 
 export interface FetchPagosParams {
@@ -137,6 +148,7 @@ export interface FetchPagosParams {
   socio?: string
   año?: number
   mes?: string
+  includeDeleted?: boolean
 }
 
 // Interfaces para formularios adicionales

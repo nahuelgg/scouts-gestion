@@ -18,6 +18,9 @@ import SocioDetails from './pages/SocioDetails'
 import UsuariosList from './pages/UsuariosList'
 import UsuarioForm from './pages/UsuarioForm'
 import UsuarioDetails from './pages/UsuarioDetails'
+import PagosList from './pages/PagosList'
+import PagoForm from './pages/PagoForm'
+import PagoDetails from './pages/PagoDetails'
 import 'antd/dist/reset.css'
 
 // Componente para rutas protegidas
@@ -143,10 +146,7 @@ const AppContent: React.FC = () => {
           <Route path="socios/:id" element={<SocioDetails />} />
 
           {/* Rutas de pagos - Accesibles para todos los roles autenticados */}
-          <Route
-            path="pagos"
-            element={<div>Lista de pagos (por implementar)</div>}
-          />
+          <Route path="pagos" element={<PagosList />} />
           <Route
             path="pagos/nuevo"
             element={
@@ -157,7 +157,35 @@ const AppContent: React.FC = () => {
                   'jefe de rama',
                 ]}
               >
-                <div>Nuevo pago (por implementar)</div>
+                <PagoForm />
+              </RoleRestrictedRoute>
+            }
+          />
+          <Route
+            path="pagos/:id/editar"
+            element={
+              <RoleRestrictedRoute
+                allowedRoles={[
+                  'administrador',
+                  'jefe de grupo',
+                  'jefe de rama',
+                ]}
+              >
+                <PagoForm />
+              </RoleRestrictedRoute>
+            }
+          />
+          <Route
+            path="pagos/:id/detalles"
+            element={
+              <RoleRestrictedRoute
+                allowedRoles={[
+                  'administrador',
+                  'jefe de grupo',
+                  'jefe de rama',
+                ]}
+              >
+                <PagoDetails />
               </RoleRestrictedRoute>
             }
           />

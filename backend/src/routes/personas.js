@@ -5,6 +5,7 @@ const {
   createPersona,
   updatePersona,
   deletePersona,
+  restorePersona,
 } = require('../controllers/personaController')
 const {
   protect,
@@ -47,5 +48,8 @@ router
     updatePersona
   )
   .delete(protect, requireFullAccess, deletePersona)
+
+// Ruta específica para restaurar persona
+router.route('/:id/restore').patch(protect, requireFullAccess, restorePersona)
 
 module.exports = router

@@ -5,6 +5,7 @@ const {
   createPago,
   updatePago,
   deletePago,
+  restorePago,
   getResumenPagosSocio,
   upload,
 } = require('../controllers/pagoController')
@@ -45,6 +46,8 @@ router
     updatePago
   )
   .delete(protect, requireFullAccess, deletePago)
+
+router.route('/:id/restore').patch(protect, requireFullAccess, restorePago)
 
 router.route('/resumen/:socioId').get(protect, getResumenPagosSocio)
 

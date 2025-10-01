@@ -6,10 +6,23 @@ const Rama = require('../models/Rama')
 // @access  Private
 const getPersonas = async (req, res) => {
   try {
-    const { page = 1, limit = 10, search = '', rama = '', dni = '' } = req.query
+    const {
+      page = 1,
+      limit = 10,
+      search = '',
+      rama = '',
+      dni = '',
+      includeDeleted = true,
+    } = req.query
 
-    // Construir filtros - excluir personas eliminadas
-    const filter = { deleted: false }
+    // Construir filtros
+    let filter = {}
+
+    // Por defecto mostrar todas (incluidas eliminadas)
+    // Solo excluir eliminadas si se solicita específicamente
+    if (includeDeleted === 'false') {
+      filter.deleted = false
+    }
 
     // Filtro por DNI exacto (para usuarios tipo 'socio')
     if (dni) {
@@ -219,9 +232,55 @@ const deletePersona = async (req, res) => {
 
     // Soft delete - marcar como eliminada
     persona.deleted = true
+    persona.deletedAt = new Date()
     await persona.save()
 
-    res.json({ message: 'Persona eliminada exitosamente' })
+    // Repoblar para enviar respuesta completa
+    await persona.populate({
+      path: 'rama',
+      select: 'nombre color',
+    })
+
+    res.json({
+      message: 'Persona eliminada exitosamente',
+      persona: persona,
+    })
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ message: 'Error del servidor' })
+  }
+}
+
+// @desc    Restaurar persona eliminada
+// @route   PATCH /api/personas/:id/restore
+// @access  Private (administrador)
+const restorePersona = async (req, res) => {
+  try {
+    const persona = await Persona.findOne({
+      _id: req.params.id,
+      deleted: true,
+    })
+
+    if (!persona) {
+      return res
+        .status(404)
+        .json({ message: 'Persona eliminada no encontrada' })
+    }
+
+    // Restaurar persona
+    persona.deleted = false
+    await persona.save()
+
+    // Repoblar para enviar respuesta completa
+    await persona.populate({
+      path: 'rama',
+      select: 'nombre color',
+    })
+
+    res.json({
+      message: 'Persona restaurada exitosamente',
+      persona: persona,
+    })
   } catch (error) {
     console.error(error)
     res.status(500).json({ message: 'Error del servidor' })
@@ -234,4 +293,5 @@ module.exports = {
   createPersona,
   updatePersona,
   deletePersona,
+  restorePersona,
 }
