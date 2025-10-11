@@ -170,45 +170,218 @@ const checkRestrictedAccess = async (req, res, next) => {
   }
 
   // Para todos los demás roles (incluido 'socio'), aplicar restricciones
-  // Solo pueden acceder a su propia información basada en su DNI
+  // Solo pueden acceder a su propia información
 
-  // Para GET de personas, forzar filtro por DNI del usuario
-  if (req.method === 'GET' && req.baseUrl === '/api/personas') {
-    if (!req.query.dni) {
-      req.query.dni = req.user.persona.dni
-    } else if (req.query.dni !== req.user.persona.dni) {
-      return res.status(403).json({
-        message: 'Solo puede acceder a su propia información',
-      })
-    }
-  }
-
-  // Para acceso a una persona específica por ID
-  if (req.params.id && req.baseUrl === '/api/personas') {
-    const Persona = require('../models/Persona')
-    try {
-      const persona = await Persona.findById(req.params.id)
-      if (persona && persona.dni !== req.user.persona.dni) {
+  // RESTRICCIONES PARA PERSONAS
+  if (req.baseUrl === '/api/personas') {
+    // Para GET de personas, forzar filtro por DNI del usuario
+    if (req.method === 'GET' && !req.params.id) {
+      if (!req.query.dni) {
+        req.query.dni = req.user.persona.dni
+      } else if (req.query.dni !== req.user.persona.dni) {
         return res.status(403).json({
           message: 'Solo puede acceder a su propia información',
         })
       }
-    } catch (error) {
-      console.error('Error verificando acceso restringido:', error)
+    }
+
+    // Para acceso a una persona específica por ID
+    if (req.params.id) {
+      const Persona = require('../models/Persona')
+      try {
+        const persona = await Persona.findById(req.params.id)
+        if (persona && persona.dni !== req.user.persona.dni) {
+          return res.status(403).json({
+            message: 'Solo puede acceder a su propia información',
+          })
+        }
+      } catch (error) {
+        console.error('Error verificando acceso restringido a persona:', error)
+        return res.status(500).json({ message: 'Error interno del servidor' })
+      }
+    }
+
+    // Para modificaciones (PUT, POST, DELETE), denegar acceso
+    if (['PUT', 'POST', 'DELETE'].includes(req.method)) {
+      return res.status(403).json({
+        message: 'No tiene permisos para modificar datos',
+      })
     }
   }
 
-  // Para modificaciones (PUT, POST, DELETE), denegar acceso
-  if (
-    ['PUT', 'POST', 'DELETE'].includes(req.method) &&
-    req.baseUrl === '/api/personas'
-  ) {
-    return res.status(403).json({
-      message: 'No tiene permisos para modificar datos',
-    })
+  // RESTRICCIONES PARA PAGOS
+  if (req.baseUrl === '/api/pagos') {
+    // Para GET de lista de pagos, filtrar por su propio socio
+    if (req.method === 'GET' && !req.params.id) {
+      req.query.socio = req.user.persona._id.toString()
+      req.query.includeDeleted = 'false' // Los socios no ven pagos eliminados
+    }
+
+    // Para GET de pago específico por ID, verificar que sea su propio pago
+    if (req.method === 'GET' && req.params.id) {
+      const Pago = require('../models/Pago')
+      try {
+        const pago = await Pago.findById(req.params.id).populate('socio')
+        if (!pago) {
+          return res.status(404).json({ message: 'Pago no encontrado' })
+        }
+
+        if (pago.socio._id.toString() !== req.user.persona._id.toString()) {
+          return res.status(403).json({
+            message: 'Solo puede acceder a sus propios pagos',
+          })
+        }
+      } catch (error) {
+        console.error('Error verificando acceso restringido a pago:', error)
+        return res.status(500).json({ message: 'Error interno del servidor' })
+      }
+    }
+
+    // Para modificaciones (PUT, POST, DELETE), denegar acceso
+    if (['PUT', 'POST', 'DELETE'].includes(req.method)) {
+      return res.status(403).json({
+        message: 'No tiene permisos para esta acción',
+      })
+    }
   }
 
   next()
+}
+
+// Middleware combinado que verifica permisos o aplica restricciones
+const requirePermissionOrRestricted = (permiso) => {
+  return async (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ message: 'No autorizado' })
+    }
+
+    const userPermissions = req.user.rol.permisos
+
+    // Si tiene el permiso requerido, permitir acceso completo
+    if (userPermissions.includes(permiso)) {
+      return next()
+    }
+
+    // Si no tiene el permiso pero tiene acceso limitado, aplicar restricciones
+    if (userPermissions.includes('acceso_limitado')) {
+      return checkRestrictedAccess(req, res, next)
+    }
+
+    // Si no tiene ningún permiso relevante, denegar acceso
+    return res.status(403).json({
+      message: `No tiene permiso: ${permiso}`,
+    })
+  }
+}
+
+// Middleware para permitir eliminación de pagos con control por rama
+const requireDeletePagoAccess = async (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ message: 'No autorizado' })
+  }
+
+  const userRole = req.user.rol.nombre
+  const userPermissions = req.user.rol.permisos
+
+  // Administrador y Jefe de Grupo tienen acceso completo para eliminar
+  if (userPermissions.includes('acceso_completo')) {
+    return next()
+  }
+
+  // Jefe de Rama puede eliminar pagos de su rama específica
+  if (
+    userRole === 'jefe de rama' &&
+    userPermissions.includes('acceso_rama_propia')
+  ) {
+    try {
+      const Pago = require('../models/Pago')
+      const pago = await Pago.findById(req.params.id).populate({
+        path: 'socio',
+        populate: {
+          path: 'rama',
+        },
+      })
+
+      if (!pago) {
+        return res.status(404).json({ message: 'Pago no encontrado' })
+      }
+
+      // Verificar que el pago pertenezca a la rama del jefe
+      if (
+        !pago.socio?.rama ||
+        pago.socio.rama._id.toString() !== req.user.persona.rama._id.toString()
+      ) {
+        return res.status(403).json({
+          message: 'Solo puede eliminar pagos de su rama asignada',
+        })
+      }
+
+      return next()
+    } catch (error) {
+      console.error('Error verificando acceso para eliminar pago:', error)
+      return res.status(500).json({ message: 'Error interno del servidor' })
+    }
+  }
+
+  // Para todos los demás casos, denegar acceso
+  return res.status(403).json({
+    message: 'No tiene permisos para eliminar pagos',
+  })
+}
+
+// Middleware para permitir restauración de pagos con control por rama
+const requireRestorePagoAccess = async (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ message: 'No autorizado' })
+  }
+
+  const userRole = req.user.rol.nombre
+  const userPermissions = req.user.rol.permisos
+
+  // Administrador y Jefe de Grupo tienen acceso completo para restaurar
+  if (userPermissions.includes('acceso_completo')) {
+    return next()
+  }
+
+  // Jefe de Rama puede restaurar pagos de su rama específica
+  if (
+    userRole === 'jefe de rama' &&
+    userPermissions.includes('acceso_rama_propia')
+  ) {
+    try {
+      const Pago = require('../models/Pago')
+      const pago = await Pago.findById(req.params.id).populate({
+        path: 'socio',
+        populate: {
+          path: 'rama',
+        },
+      })
+
+      if (!pago) {
+        return res.status(404).json({ message: 'Pago no encontrado' })
+      }
+
+      // Verificar que el pago pertenezca a la rama del jefe
+      if (
+        !pago.socio?.rama ||
+        pago.socio.rama._id.toString() !== req.user.persona.rama._id.toString()
+      ) {
+        return res.status(403).json({
+          message: 'Solo puede restaurar pagos de su rama asignada',
+        })
+      }
+
+      return next()
+    } catch (error) {
+      console.error('Error verificando acceso para restaurar pago:', error)
+      return res.status(500).json({ message: 'Error interno del servidor' })
+    }
+  }
+
+  // Para todos los demás casos, denegar acceso
+  return res.status(403).json({
+    message: 'No tiene permisos para restaurar pagos',
+  })
 }
 
 module.exports = {
@@ -218,4 +391,7 @@ module.exports = {
   checkRamaAccess,
   requireFullAccess,
   checkRestrictedAccess,
+  requirePermissionOrRestricted,
+  requireDeletePagoAccess,
+  requireRestorePagoAccess,
 }

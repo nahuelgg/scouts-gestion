@@ -131,6 +131,10 @@ const personasSlice = createSlice({
     clearCurrentPersona: (state) => {
       state.currentPersona = null
     },
+    clearAllPersonas: (state) => {
+      // Resetear completamente el estado al hacer logout
+      Object.assign(state, initialState)
+    },
   },
   extraReducers: (builder) => {
     // Fetch Personas
@@ -254,5 +258,6 @@ const personasSlice = createSlice({
   },
 })
 
-export const { clearError, clearCurrentPersona } = personasSlice.actions
+export const { clearError, clearCurrentPersona, clearAllPersonas } =
+  personasSlice.actions
 export default personasSlice.reducer

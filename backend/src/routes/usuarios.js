@@ -9,18 +9,64 @@ const {
   restoreUsuario,
 } = require('../controllers/usuarioController')
 const { protect, requireFullAccess } = require('../middleware/auth')
+const { handleValidationErrors } = require('../middleware/validation')
+const {
+  validateCreateUsuario,
+  validateUpdateUsuario,
+  validateUsuarioId,
+  validateUsuarioQuery,
+} = require('../validators/usuarioValidators')
 
 router
   .route('/')
-  .get(protect, requireFullAccess, getUsuarios)
-  .post(protect, requireFullAccess, createUsuario)
+  .get(
+    protect,
+    requireFullAccess,
+    validateUsuarioQuery,
+    handleValidationErrors,
+    getUsuarios
+  )
+  .post(
+    protect,
+    requireFullAccess,
+    validateCreateUsuario,
+    handleValidationErrors,
+    createUsuario
+  )
 
 router
   .route('/:id')
-  .get(protect, requireFullAccess, getUsuarioById)
-  .put(protect, requireFullAccess, updateUsuario)
-  .delete(protect, requireFullAccess, deleteUsuario)
+  .get(
+    protect,
+    requireFullAccess,
+    validateUsuarioId,
+    handleValidationErrors,
+    getUsuarioById
+  )
+  .put(
+    protect,
+    requireFullAccess,
+    validateUsuarioId,
+    validateUpdateUsuario,
+    handleValidationErrors,
+    updateUsuario
+  )
+  .delete(
+    protect,
+    requireFullAccess,
+    validateUsuarioId,
+    handleValidationErrors,
+    deleteUsuario
+  )
 
-router.route('/:id/restore').patch(protect, requireFullAccess, restoreUsuario)
+router
+  .route('/:id/restore')
+  .patch(
+    protect,
+    requireFullAccess,
+    validateUsuarioId,
+    handleValidationErrors,
+    restoreUsuario
+  )
 
 module.exports = router

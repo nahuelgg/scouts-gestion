@@ -322,7 +322,7 @@ const UsuariosList: React.FC = () => {
             <Button
               type="link"
               icon={<EyeOutlined />}
-              onClick={() => navigate(`/usuarios/${record._id}/detalles`)}
+              onClick={() => navigate(`/usuarios/${record._id}`)}
             />
           </Tooltip>
 

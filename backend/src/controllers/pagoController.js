@@ -1,47 +1,6 @@
 const Pago = require('../models/Pago')
 const Persona = require('../models/Persona')
-const multer = require('multer')
-const path = require('path')
-const fs = require('fs')
-
-// Configuración de multer para subida de archivos
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const year = new Date().getFullYear()
-    const uploadPath = path.join(
-      process.env.UPLOAD_PATH || './uploads',
-      year.toString()
-    )
-
-    // Crear directorio si no existe
-    if (!fs.existsSync(uploadPath)) {
-      fs.mkdirSync(uploadPath, { recursive: true })
-    }
-
-    cb(null, uploadPath)
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9)
-    cb(null, 'comprobante-' + uniqueSuffix + path.extname(file.originalname))
-  },
-})
-
-const fileFilter = (req, file, cb) => {
-  // Permitir solo imágenes
-  if (file.mimetype.startsWith('image/')) {
-    cb(null, true)
-  } else {
-    cb(new Error('Solo se permiten archivos de imagen'), false)
-  }
-}
-
-const upload = multer({
-  storage: storage,
-  limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB máximo
-  },
-  fileFilter: fileFilter,
-})
+const logger = require('../utils/logger')
 
 // @desc    Obtener todos los pagos
 // @route   GET /api/pagos
@@ -471,5 +430,4 @@ module.exports = {
   deletePago,
   restorePago,
   getResumenPagosSocio,
-  upload,
 }

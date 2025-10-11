@@ -108,7 +108,7 @@ const SocioDetails: React.FC = () => {
             <Button
               type="primary"
               icon={<EditOutlined />}
-              onClick={() => navigate(`/socios/editar/${currentPersona._id}`)}
+              onClick={() => navigate(`/socios/${currentPersona._id}/editar`)}
             >
               Editar Socio
             </Button>

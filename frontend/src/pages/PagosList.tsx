@@ -35,6 +35,7 @@ import {
 } from '../store/pagosSlice'
 import dayjs from 'dayjs'
 import type { Pago } from '../types'
+import { formatCurrency } from '../utils/currency'
 
 const { Title } = Typography
 const { Search } = Input
@@ -97,11 +98,7 @@ const PagosList: React.FC = () => {
       return isPagoFromUserRama(pago)
     }
 
-    // Socio solo puede eliminar sus propios pagos
-    if (userRole === 'socio') {
-      return isPagoFromUser(pago)
-    }
-
+    // Los socios NO pueden eliminar ningún pago
     return false
   }
 
@@ -196,6 +193,8 @@ const PagosList: React.FC = () => {
       message.success('Pago eliminado exitosamente')
       setDeleteModalVisible(false)
       setPagoToDelete(null)
+      // Recargar la lista para actualizar la UI
+      loadPagos()
     } catch (error) {
       console.error('Error eliminando pago:', error)
       message.error('Error eliminando pago')
@@ -225,6 +224,8 @@ const PagosList: React.FC = () => {
       message.success('Pago restaurado exitosamente')
       setRestoreModalVisible(false)
       setPagoToRestore(null)
+      // Recargar la lista para actualizar la UI
+      loadPagos()
     } catch (error) {
       console.error('Error restaurando pago:', error)
       message.error('Error restaurando pago')
@@ -316,9 +317,7 @@ const PagosList: React.FC = () => {
       dataIndex: 'monto',
       key: 'monto',
       render: (monto: number) => (
-        <strong style={{ color: '#52c41a' }}>
-          ${monto.toLocaleString('es-AR')}
-        </strong>
+        <strong style={{ color: '#52c41a' }}>{formatCurrency(monto)}</strong>
       ),
       sorter: (a: Pago, b: Pago) => a.monto - b.monto,
     },
@@ -386,25 +385,30 @@ const PagosList: React.FC = () => {
       title: 'Acciones',
       key: 'acciones',
       render: (record: Pago) => {
-        // Verificar si el jefe de rama puede gestionar este pago
+        // Verificar permisos para este pago específico
         const canManageThisPago =
           canManageAll ||
           (canManageRama && record.socio?.rama?._id === userRamaId)
 
+        // Los socios pueden ver detalles de sus propios pagos
+        const canViewThisPago =
+          canManageThisPago ||
+          (canOnlyView && record.socio?._id === userPersonaId)
+
         return (
           <Space size="small">
-            {/* Ver detalles - Solo admin/jefe de grupo: todos, jefe de rama: solo su rama. Los socios NO pueden ver */}
-            {canManageThisPago && (
+            {/* Ver detalles - Admin/jefe: todos, jefe de rama: solo su rama, socios: solo sus propios pagos */}
+            {canViewThisPago && (
               <Tooltip title="Ver detalles">
                 <Button
                   type="link"
                   icon={<EyeOutlined />}
-                  onClick={() => navigate(`/pagos/${record._id}/detalles`)}
+                  onClick={() => navigate(`/pagos/${record._id}`)}
                 />
               </Tooltip>
             )}
 
-            {/* Editar - Solo admin/jefe de grupo: todos, jefe de rama: solo su rama. Los socios NO pueden editar. No editar eliminados */}
+            {/* Editar - Solo admin/jefe de grupo: todos, jefe de rama: solo su rama. Los socios NO pueden editar. */}
             {canManageThisPago && !record.deleted && (
               <Tooltip title="Editar">
                 <Button
@@ -529,7 +533,7 @@ const PagosList: React.FC = () => {
               format="DD/MM/YYYY"
             />
           </Col>
-          <Col xs={24} sm={12} md={4}>
+          {/* <Col xs={24} sm={12} md={4}>
             <Button
               icon={<DownloadOutlined />}
               onClick={() =>
@@ -539,7 +543,7 @@ const PagosList: React.FC = () => {
             >
               Exportar
             </Button>
-          </Col>
+          </Col> */}
         </Row>
 
         <Table
@@ -572,9 +576,7 @@ const PagosList: React.FC = () => {
           <Col xs={24} sm={8} md={6}>
             <Statistic
               title="Monto Total"
-              value={totalMonto}
-              prefix="$"
-              precision={2}
+              value={formatCurrency(totalMonto)}
               valueStyle={{ color: '#3f8600' }}
             />
           </Col>

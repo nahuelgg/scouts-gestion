@@ -56,6 +56,30 @@ export const getProfile = createAsyncThunk(
   }
 )
 
+export const checkAuthToken = createAsyncThunk(
+  'auth/checkAuthToken',
+  async (_, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) {
+        return rejectWithValue('No token found')
+      }
+
+      const response = await authAPI.getProfile()
+      return response
+    } catch (error: unknown) {
+      // Si falla la verificación, limpiar localStorage
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+
+      const apiError = error as ApiError
+      return rejectWithValue(
+        apiError.response?.data?.message || 'Token inválido'
+      )
+    }
+  }
+)
+
 export const changePassword = createAsyncThunk(
   'auth/changePassword',
   async (
@@ -124,6 +148,25 @@ const authSlice = createSlice({
       })
       .addCase(getProfile.rejected, (state, action) => {
         state.isLoading = false
+        state.error = action.payload as string
+      })
+
+    // Check Auth Token
+    builder
+      .addCase(checkAuthToken.pending, (state) => {
+        state.isLoading = true
+      })
+      .addCase(checkAuthToken.fulfilled, (state, action) => {
+        state.isLoading = false
+        state.user = action.payload
+        state.isAuthenticated = true
+        localStorage.setItem('user', JSON.stringify(action.payload))
+      })
+      .addCase(checkAuthToken.rejected, (state, action) => {
+        state.isLoading = false
+        state.user = null
+        state.token = null
+        state.isAuthenticated = false
         state.error = action.payload as string
       })
 

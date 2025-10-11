@@ -2,11 +2,12 @@ const jwt = require('jsonwebtoken')
 const Usuario = require('../models/Usuario')
 const Persona = require('../models/Persona')
 const Rol = require('../models/Rol')
+const logger = require('../utils/logger')
 
 // Generar JWT
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: '30d',
+    expiresIn: process.env.JWT_EXPIRES_IN || '30d',
   })
 }
 
@@ -47,6 +48,12 @@ const login = async (req, res) => {
       usuario.ultimoLogin = new Date()
       await usuario.save()
 
+      logger.auth(`Login exitoso: ${username}`, {
+        userId: usuario._id,
+        username,
+        rol: usuario.rol.nombre,
+      })
+
       res.json({
         _id: usuario._id,
         username: usuario.username,
@@ -55,10 +62,19 @@ const login = async (req, res) => {
         token: generateToken(usuario._id),
       })
     } else {
+      logger.security(`Intento de login fallido: ${username}`, {
+        username,
+        ip: req.ip,
+      })
       res.status(401).json({ message: 'Credenciales inválidas' })
     }
   } catch (error) {
-    console.error(error)
+    logger.error('Error en login:', {
+      error: error.message,
+      stack: error.stack,
+      username: req.body.username,
+      ip: req.ip,
+    })
     res.status(500).json({ message: 'Error del servidor' })
   }
 }

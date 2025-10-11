@@ -144,6 +144,10 @@ const pagosSlice = createSlice({
     setCurrentPage: (state, action) => {
       state.currentPage = action.payload
     },
+    clearAllPagos: (state) => {
+      // Resetear completamente el estado al hacer logout
+      Object.assign(state, initialState)
+    },
   },
   extraReducers: (builder) => {
     // Fetch Pagos
@@ -283,6 +287,6 @@ const pagosSlice = createSlice({
   },
 })
 
-export const { clearError, clearCurrentPago, setCurrentPage } =
+export const { clearError, clearCurrentPago, setCurrentPage, clearAllPagos } =
   pagosSlice.actions
 export default pagosSlice.reducer

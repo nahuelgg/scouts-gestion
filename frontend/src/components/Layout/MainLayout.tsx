@@ -18,10 +18,14 @@ import {
   LogoutOutlined,
   SettingOutlined,
   DashboardOutlined,
+  LockOutlined,
 } from '@ant-design/icons'
 import { useNavigate, useLocation, Outlet } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../../utils/hooks'
 import { logout } from '../../store/authSlice'
+import { clearAllPersonas } from '../../store/personasSlice'
+import { clearAllPagos } from '../../store/pagosSlice'
+import { clearAllUsuarios } from '../../store/usuariosSlice'
 
 const { Header, Sider, Content } = Layout
 const { Text } = Typography
@@ -34,16 +38,22 @@ const MainLayout: React.FC = () => {
   const { user } = useAppSelector((state) => state.auth)
 
   const handleLogout = () => {
+    // Limpiar todos los datos del store
     dispatch(logout())
+    dispatch(clearAllPersonas())
+    dispatch(clearAllPagos())
+    dispatch(clearAllUsuarios())
+
+    // Navegar al login
     navigate('/login')
   }
 
   const userMenuItems: MenuProps['items'] = [
     {
-      key: 'profile',
-      icon: <UserOutlined />,
-      label: 'Mi Perfil',
-      onClick: () => navigate('/perfil'),
+      key: 'change-password',
+      icon: <LockOutlined />,
+      label: 'Cambio de Contraseña',
+      onClick: () => navigate('/cambio-contrasena'),
     },
     {
       key: 'settings',

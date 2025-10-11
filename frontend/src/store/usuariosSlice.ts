@@ -126,6 +126,10 @@ const usuariosSlice = createSlice({
     clearCurrentUsuario: (state) => {
       state.currentUsuario = null
     },
+    clearAllUsuarios: (state) => {
+      // Resetear completamente el estado al hacer logout
+      Object.assign(state, initialState)
+    },
   },
   extraReducers: (builder) => {
     // Fetch Usuarios
@@ -241,5 +245,6 @@ const usuariosSlice = createSlice({
   },
 })
 
-export const { clearError, clearCurrentUsuario } = usuariosSlice.actions
+export const { clearError, clearCurrentUsuario, clearAllUsuarios } =
+  usuariosSlice.actions
 export default usuariosSlice.reducer

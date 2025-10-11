@@ -7,7 +7,6 @@ const {
   deletePago,
   restorePago,
   getResumenPagosSocio,
-  upload,
 } = require('../controllers/pagoController')
 const {
   protect,
@@ -15,18 +14,41 @@ const {
   requirePermission,
   checkRamaAccess,
   requireFullAccess,
+  checkRestrictedAccess,
+  requirePermissionOrRestricted,
+  requireDeletePagoAccess,
+  requireRestorePagoAccess,
 } = require('../middleware/auth')
+const { handleValidationErrors } = require('../middleware/validation')
+const { uploadComprobanteWithErrorHandling } = require('../middleware/upload')
+const { validateComprobanteFile } = require('../middleware/fileValidation')
+const {
+  validateCreatePago,
+  validateUpdatePago,
+  validatePagoId,
+  validateSocioId,
+  validatePagoQuery,
+} = require('../validators/pagoValidators')
 
 const router = express.Router()
 
 router
   .route('/')
-  .get(protect, requirePermission('gestionar_pagos'), getPagos)
+  .get(
+    protect,
+    checkRestrictedAccess, // Permitir acceso con restricciones apropiadas
+    validatePagoQuery,
+    handleValidationErrors,
+    getPagos
+  )
   .post(
     protect,
     requirePermission('gestionar_pagos'),
+    uploadComprobanteWithErrorHandling,
+    validateComprobanteFile,
+    validateCreatePago,
+    handleValidationErrors,
     checkRamaAccess,
-    upload.single('comprobante'),
     createPago
   )
 
@@ -34,21 +56,42 @@ router
   .route('/:id')
   .get(
     protect,
-    requirePermission('gestionar_pagos'),
-    checkRamaAccess,
+    checkRestrictedAccess, // Permitir acceso con restricciones apropiadas
+    validatePagoId,
+    handleValidationErrors,
     getPagoById
   )
   .put(
     protect,
     requirePermission('gestionar_pagos'),
+    validatePagoId,
+    uploadComprobanteWithErrorHandling,
+    validateComprobanteFile,
+    validateUpdatePago,
+    handleValidationErrors,
     checkRamaAccess,
-    upload.single('comprobante'),
     updatePago
   )
-  .delete(protect, requireFullAccess, deletePago)
+  .delete(
+    protect,
+    requireDeletePagoAccess,
+    validatePagoId,
+    handleValidationErrors,
+    deletePago
+  )
 
-router.route('/:id/restore').patch(protect, requireFullAccess, restorePago)
+router
+  .route('/:id/restore')
+  .patch(
+    protect,
+    requireRestorePagoAccess,
+    validatePagoId,
+    handleValidationErrors,
+    restorePago
+  )
 
-router.route('/resumen/:socioId').get(protect, getResumenPagosSocio)
+router
+  .route('/resumen/:socioId')
+  .get(protect, validateSocioId, handleValidationErrors, getResumenPagosSocio)
 
 module.exports = router

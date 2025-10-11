@@ -142,9 +142,13 @@ const PagoForm: React.FC = () => {
   const onFinish = async (values: any) => {
     const formData = new FormData()
 
+    // Normalizar el monto: reemplazar comas por puntos y convertir a número
+    const normalizedMonto = values.monto.toString().replace(/,/g, '.')
+    const montoNumber = parseFloat(normalizedMonto)
+
     // Datos básicos del pago
     formData.append('socio', values.socio)
-    formData.append('monto', values.monto.toString())
+    formData.append('monto', montoNumber.toString())
     formData.append('fechaPago', values.fechaPago.toISOString())
     formData.append('mesCorrespondiente', values.mesCorrespondiente)
     formData.append('metodoPago', values.metodoPago)
@@ -300,44 +304,85 @@ const PagoForm: React.FC = () => {
                     message: 'El monto es requerido',
                   },
                   {
-                    type: 'number',
-                    min: 0.01,
-                    message: 'El monto debe ser mayor a 0',
-                  },
-                  {
                     validator: (_, value) => {
-                      if (value && !Number.isFinite(value)) {
+                      if (!value) {
                         return Promise.reject(
-                          new Error('Solo se permiten números válidos')
+                          new Error('El monto es requerido')
                         )
                       }
+
+                      // Normalizar el valor: reemplazar comas por puntos para parseFloat
+                      const normalizedValue = value
+                        .toString()
+                        .replace(/,/g, '.')
+                      const num = parseFloat(normalizedValue)
+
+                      if (isNaN(num)) {
+                        return Promise.reject(
+                          new Error('Debe ser un número válido')
+                        )
+                      }
+
+                      if (num < 0.01) {
+                        return Promise.reject(
+                          new Error('El monto debe ser mayor a 0')
+                        )
+                      }
+
+                      if (num > 99999999.99) {
+                        return Promise.reject(
+                          new Error('El monto no puede exceder 99,999,999.99')
+                        )
+                      }
+
+                      // Verificar que no tenga más de 2 decimales
+                      const decimalPart = normalizedValue.split('.')[1]
+                      if (decimalPart && decimalPart.length > 2) {
+                        return Promise.reject(
+                          new Error('Solo se permiten hasta 2 decimales')
+                        )
+                      }
+
                       return Promise.resolve()
                     },
                   },
                 ]}
               >
-                <InputNumber
+                <Input
                   style={{ width: '100%' }}
-                  placeholder="Ingresa el monto"
+                  placeholder="Ingresa el monto (ej: 1234.50 o 1234,50)"
                   prefix="$"
-                  min={0.01}
-                  max={999999.99}
-                  precision={2}
-                  step={0.01}
-                  controls={false}
-                  parser={(value) => {
-                    const parsed = value?.replace(/[^\d.]/g, '') || ''
-                    return parsed as any
-                  }}
-                  formatter={(value) => {
-                    if (!value) return ''
-                    const num = parseFloat(value.toString())
-                    return Number.isNaN(num)
-                      ? ''
-                      : num.toLocaleString('es-AR', {
-                          minimumFractionDigits: 0,
-                          maximumFractionDigits: 2,
-                        })
+                  onChange={(e) => {
+                    let value = e.target.value
+                    // Permitir solo dígitos, puntos y comas
+                    value = value.replace(/[^\d.,]/g, '')
+
+                    // Limitar a un solo separador decimal
+                    const parts = value.split(/[.,]/)
+                    if (parts.length > 2) {
+                      // Si hay más de un separador, mantener solo el primero
+                      value = parts[0] + '.' + parts.slice(1).join('')
+                    }
+
+                    // Limitar decimales a 2 dígitos
+                    if (value.includes('.') || value.includes(',')) {
+                      const separatorIndex = Math.max(
+                        value.lastIndexOf('.'),
+                        value.lastIndexOf(',')
+                      )
+                      const beforeSeparator = value.substring(0, separatorIndex)
+                      const afterSeparator = value.substring(separatorIndex + 1)
+
+                      if (afterSeparator.length > 2) {
+                        value =
+                          beforeSeparator + '.' + afterSeparator.substring(0, 2)
+                      } else {
+                        value = beforeSeparator + '.' + afterSeparator
+                      }
+                    }
+
+                    // Actualizar el valor en el formulario
+                    e.target.value = value
                   }}
                 />
               </Form.Item>

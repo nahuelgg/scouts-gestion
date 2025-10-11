@@ -119,13 +119,10 @@ const createUsuario = async (req, res) => {
       })
     }
 
-    // Hash de la contraseña
-    const salt = await bcrypt.genSalt(10)
-    const hashedPassword = await bcrypt.hash(password, salt)
-
+    // Crear usuario (el middleware se encargará del hash de la contraseña)
     const usuario = new Usuario({
       username,
-      password: hashedPassword,
+      password, // Sin hashear, el middleware lo hará
       persona,
       rol,
       activo,
@@ -193,10 +190,9 @@ const updateUsuario = async (req, res) => {
     if (rol) usuario.rol = rol
     if (activo !== undefined) usuario.activo = activo
 
-    // Hash nueva contraseña si se proporciona
+    // Asignar nueva contraseña si se proporciona (el middleware se encargará del hash)
     if (password && password.length > 0) {
-      const salt = await bcrypt.genSalt(10)
-      usuario.password = await bcrypt.hash(password, salt)
+      usuario.password = password
     }
 
     await usuario.save()

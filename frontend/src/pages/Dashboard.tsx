@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useCallback } from 'react'
 import {
   Row,
   Col,
@@ -15,69 +15,111 @@ import {
   DollarOutlined,
   UserOutlined,
   PlusOutlined,
+  ReloadOutlined,
 } from '@ant-design/icons'
-import { useNavigate } from 'react-router-dom'
-import { useAppSelector } from '../utils/hooks'
-import { personasAPI, pagosAPI } from '../services/api'
+import { useNavigate, useLocation } from 'react-router-dom'
+import { useAppSelector, useAppDispatch } from '../utils/hooks'
+import { fetchPersonas } from '../store/personasSlice'
+import { fetchPagos } from '../store/pagosSlice'
+import { formatCurrency } from '../utils/currency'
 
 const { Title } = Typography
 
-interface DashboardStats {
-  totalSocios: number
-  sociosActivos: number
-  pagosEsteMes: number
-  totalRecaudado: number
-}
-
 const Dashboard: React.FC = () => {
   const navigate = useNavigate()
+  const location = useLocation()
+  const dispatch = useAppDispatch()
   const { user } = useAppSelector((state) => state.auth)
-  const [stats, setStats] = useState<DashboardStats>({
-    totalSocios: 0,
-    sociosActivos: 0,
-    pagosEsteMes: 0,
-    totalRecaudado: 0,
-  })
-  const [recentPayments, setRecentPayments] = useState([])
-  const [loading, setLoading] = useState(true)
+  const { personas, isLoading: personasLoading } = useAppSelector(
+    (state) => state.personas
+  )
+  const { pagos, isLoading: pagosLoading } = useAppSelector(
+    (state) => state.pagos
+  )
+
+  const loading = personasLoading || pagosLoading
+
+  // Función para cargar los datos
+  const loadDashboardData = useCallback(
+    (force = false) => {
+      // Solo cargar personas si no están cargadas o se fuerza la actualización
+      if (force || personas.length === 0) {
+        dispatch(fetchPersonas({ limit: 500 })) // Límite razonable para evitar problemas de performance
+      }
+
+      // Cargar pagos del mes actual - solo los necesarios para el Dashboard
+      const currentMonth = new Date().toISOString().slice(0, 7) // YYYY-MM
+      if (force || pagos.length === 0) {
+        dispatch(
+          fetchPagos({
+            limit: 200, // Límite optimizado - suficiente para mostrar estadísticas y pagos recientes
+            mes: currentMonth, // Filtrar por mes actual para reducir carga
+          })
+        ).catch((error) => {
+          console.error('Error cargando datos del Dashboard:', error)
+          // En caso de error, intentar cargar sin filtro de mes
+          dispatch(fetchPagos({ limit: 100 }))
+        })
+      }
+    },
+    [dispatch, personas.length, pagos.length]
+  )
 
   useEffect(() => {
+    // Cargar datos al Redux store cuando se monta el componente
     loadDashboardData()
-  }, [])
+  }, [loadDashboardData])
 
-  const loadDashboardData = async () => {
-    try {
-      setLoading(true)
-
-      // Cargar estadísticas de socios
-      const personasResponse = await personasAPI.getAll({ limit: 1000 })
-      const socios = personasResponse.personas || []
-
-      // Cargar pagos recientes
-      const currentMonth = new Date().toISOString().slice(0, 7) // YYYY-MM
-      const pagosResponse = await pagosAPI.getAll({
-        limit: 5,
-        mes: currentMonth,
-      })
-
-      setStats({
-        totalSocios: socios.length,
-        sociosActivos: socios.filter((s: any) => s.activo).length,
-        pagosEsteMes: pagosResponse.total || 0,
-        totalRecaudado:
-          pagosResponse.pagos?.reduce(
-            (sum: number, pago: any) => sum + pago.monto,
-            0
-          ) || 0,
-      })
-
-      setRecentPayments(pagosResponse.pagos || [])
-    } catch (error) {
-      console.error('Error cargando datos del dashboard:', error)
-    } finally {
-      setLoading(false)
+  // Detectar cuando se navega de vuelta al Dashboard y refrescar datos si es necesario
+  useEffect(() => {
+    if (location.pathname === '/dashboard') {
+      // Solo recargar si no hay datos
+      const shouldReload = personas.length === 0 || pagos.length === 0
+      if (shouldReload) {
+        loadDashboardData()
+      }
     }
-  }
+  }, [location.pathname, loadDashboardData, personas.length, pagos.length])
+
+  // Calcular estadísticas usando useMemo para optimizar rendimiento
+  const stats = useMemo(() => {
+    const totalSocios = personas.length
+    const sociosActivos = personas.filter((persona) => persona.activo).length
+
+    // Para pagos del mes, usar solo los pagos cargados del mes actual
+    const currentMonth = new Date().toISOString().slice(0, 7)
+    const pagosDelMes = pagos.filter((pago) => {
+      const fechaString =
+        typeof pago.fechaPago === 'string'
+          ? pago.fechaPago
+          : new Date(pago.fechaPago).toISOString()
+      return fechaString.startsWith(currentMonth)
+    })
+
+    const pagosEsteMes = pagosDelMes.length
+    const totalRecaudado = pagosDelMes.reduce(
+      (sum, pago) => sum + pago.monto,
+      0
+    )
+
+    return {
+      totalSocios,
+      sociosActivos,
+      pagosEsteMes,
+      totalRecaudado,
+    }
+  }, [personas, pagos])
+
+  // Obtener pagos recientes para la tabla
+  const recentPayments = useMemo(() => {
+    return [...pagos]
+      .sort((a, b) => {
+        const dateA = new Date(a.fechaPago).getTime()
+        const dateB = new Date(b.fechaPago).getTime()
+        return dateB - dateA
+      })
+      .slice(0, 5)
+  }, [pagos])
 
   const paymentColumns = [
     {
@@ -90,7 +132,7 @@ const Dashboard: React.FC = () => {
       title: 'Monto',
       dataIndex: 'monto',
       key: 'monto',
-      render: (monto: number) => `$${monto.toLocaleString()}`,
+      render: (monto: number) => formatCurrency(monto),
     },
     {
       title: 'Fecha',
@@ -117,10 +159,28 @@ const Dashboard: React.FC = () => {
   return (
     <div>
       <div style={{ marginBottom: 24 }}>
-        <Title level={2}>Dashboard</Title>
-        <Typography.Text type="secondary">
-          Bienvenido, {user?.persona?.nombre}
-        </Typography.Text>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <div>
+            <Title level={2}>Dashboard</Title>
+            <Typography.Text type="secondary">
+              Bienvenido, {user?.persona?.nombre}
+            </Typography.Text>
+          </div>
+          <Button
+            icon={<ReloadOutlined />}
+            onClick={() => loadDashboardData(true)}
+            loading={loading}
+            type="default"
+          >
+            Actualizar
+          </Button>
+        </div>
       </div>
 
       {/* Estadísticas principales */}
@@ -159,9 +219,8 @@ const Dashboard: React.FC = () => {
           <Card>
             <Statistic
               title="Total Recaudado"
-              value={stats.totalRecaudado}
-              prefix="$"
-              precision={0}
+              value={formatCurrency(stats.totalRecaudado)}
+              prefix={<DollarOutlined />}
               loading={loading}
             />
           </Card>

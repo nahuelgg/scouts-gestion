@@ -27,6 +27,7 @@ import {
   clearError,
 } from '../store/pagosSlice'
 import dayjs from 'dayjs'
+import { formatCurrency } from '../utils/currency'
 
 const { Title } = Typography
 
@@ -38,6 +39,21 @@ const PagoDetails: React.FC = () => {
   const { currentPago, isLoading, error } = useAppSelector(
     (state) => state.pagos
   )
+  const { user } = useAppSelector((state) => state.auth)
+
+  // Verificar permisos del usuario
+  const userRole = user?.rol?.nombre
+  const userPersonaId = user?.persona?._id
+  const userRamaId = user?.persona?.rama?._id
+
+  const canManageAll =
+    userRole === 'administrador' || userRole === 'jefe de grupo'
+  const canManageRama = userRole === 'jefe de rama'
+  const isOwnerPago = currentPago?.socio?._id === userPersonaId
+  const isFromUserRama = currentPago?.socio?.rama?._id === userRamaId
+
+  // Verificar si puede editar este pago específico
+  const canEditThisPago = canManageAll || (canManageRama && isFromUserRama)
 
   useEffect(() => {
     if (id) {
@@ -167,13 +183,16 @@ const PagoDetails: React.FC = () => {
             <Button icon={<PrinterOutlined />} onClick={handlePrint}>
               Imprimir
             </Button>
-            <Button
-              type="primary"
-              icon={<EditOutlined />}
-              onClick={() => navigate(`/pagos/${currentPago._id}/editar`)}
-            >
-              Editar Pago
-            </Button>
+            {/* Solo mostrar botón editar para usuarios con permisos de gestión */}
+            {canEditThisPago && (
+              <Button
+                type="primary"
+                icon={<EditOutlined />}
+                onClick={() => navigate(`/pagos/${currentPago._id}/editar`)}
+              >
+                Editar Pago
+              </Button>
+            )}
           </Space>
         </Col>
       </Row>
@@ -184,9 +203,7 @@ const PagoDetails: React.FC = () => {
           <Card title="Información del Pago" style={{ height: '100%' }}>
             <Descriptions column={1} bordered>
               <Descriptions.Item label="Monto">
-                <strong style={{ fontSize: '18px', color: '#52c41a' }}>
-                  ${currentPago.monto.toLocaleString('es-AR')}
-                </strong>
+                {formatCurrency(currentPago.monto)}
               </Descriptions.Item>
               <Descriptions.Item label="Fecha de Pago">
                 {dayjs(currentPago.fechaPago).format('DD/MM/YYYY')}
@@ -371,8 +388,7 @@ const PagoDetails: React.FC = () => {
             <Col span={12}>
               <h3>Información del Pago</h3>
               <p>
-                <strong>Monto:</strong> $
-                {currentPago.monto.toLocaleString('es-AR')}
+                <strong>Monto:</strong> {formatCurrency(currentPago.monto)}
               </p>
               <p>
                 <strong>Fecha:</strong>{' '}

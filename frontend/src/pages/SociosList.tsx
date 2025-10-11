@@ -282,7 +282,7 @@ const SociosList: React.FC = () => {
               <Button
                 type="text"
                 icon={<EditOutlined />}
-                onClick={() => navigate(`/socios/editar/${record._id}`)}
+                onClick={() => navigate(`/socios/${record._id}/editar`)}
               />
             </Tooltip>
           )}

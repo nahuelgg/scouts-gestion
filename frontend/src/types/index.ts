@@ -89,6 +89,12 @@ export interface LoginCredentials {
   password: string
 }
 
+export interface ChangePasswordData {
+  currentPassword: string
+  newPassword: string
+  confirmPassword: string
+}
+
 export interface ApiResponse<T> {
   message?: string
   data?: T
@@ -140,6 +146,7 @@ export interface FetchPersonasParams {
   rama?: string
   search?: string
   includeDeleted?: boolean
+  withoutUser?: boolean
 }
 
 export interface FetchPagosParams {

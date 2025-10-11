@@ -9,6 +9,7 @@ import { Provider } from 'react-redux'
 import { ConfigProvider } from 'antd'
 import { store } from './store'
 import { useAppSelector } from './utils/hooks'
+import AuthHandler from './components/AuthHandler'
 import MainLayout from './components/Layout/MainLayout'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
@@ -21,6 +22,7 @@ import UsuarioDetails from './pages/UsuarioDetails'
 import PagosList from './pages/PagosList'
 import PagoForm from './pages/PagoForm'
 import PagoDetails from './pages/PagoDetails'
+import ChangePassword from './pages/ChangePassword'
 import 'antd/dist/reset.css'
 
 // Componente para rutas protegidas
@@ -77,177 +79,108 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 const AppContent: React.FC = () => {
   return (
     <Router>
-      <Routes>
-        {/* Rutas públicas */}
-        <Route
-          path="/login"
-          element={
-            <PublicRoute>
-              <Login />
-            </PublicRoute>
-          }
-        />
-
-        {/* Rutas protegidas */}
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <MainLayout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<SmartRedirect />} />
+      <AuthHandler>
+        <Routes>
+          {/* Ruta pública de login */}
           <Route
-            path="dashboard"
+            path="/login"
             element={
-              <RoleRestrictedRoute
-                allowedRoles={[
-                  'administrador',
-                  'jefe de grupo',
-                  'jefe de rama',
-                ]}
-              >
-                <Dashboard />
-              </RoleRestrictedRoute>
+              <PublicRoute>
+                <Login />
+              </PublicRoute>
             }
           />
 
-          {/* Rutas de socios - Accesibles para todos los roles autenticados */}
-          <Route path="socios" element={<SociosList />} />
+          {/* Rutas protegidas */}
           <Route
-            path="socios/nuevo"
+            path="/"
             element={
-              <RoleRestrictedRoute
-                allowedRoles={[
-                  'administrador',
-                  'jefe de grupo',
-                  'jefe de rama',
-                ]}
-              >
-                <SocioForm />
-              </RoleRestrictedRoute>
+              <ProtectedRoute>
+                <MainLayout />
+              </ProtectedRoute>
             }
-          />
-          <Route
-            path="socios/editar/:id"
-            element={
-              <RoleRestrictedRoute
-                allowedRoles={[
-                  'administrador',
-                  'jefe de grupo',
-                  'jefe de rama',
-                ]}
-              >
-                <SocioForm />
-              </RoleRestrictedRoute>
-            }
-          />
-          <Route path="socios/:id" element={<SocioDetails />} />
+          >
+            {/* Redirección inteligente basada en rol */}
+            <Route index element={<SmartRedirect />} />
 
-          {/* Rutas de pagos - Accesibles para todos los roles autenticados */}
-          <Route path="pagos" element={<PagosList />} />
-          <Route
-            path="pagos/nuevo"
-            element={
-              <RoleRestrictedRoute
-                allowedRoles={[
-                  'administrador',
-                  'jefe de grupo',
-                  'jefe de rama',
-                ]}
-              >
-                <PagoForm />
-              </RoleRestrictedRoute>
-            }
-          />
-          <Route
-            path="pagos/:id/editar"
-            element={
-              <RoleRestrictedRoute
-                allowedRoles={[
-                  'administrador',
-                  'jefe de grupo',
-                  'jefe de rama',
-                ]}
-              >
-                <PagoForm />
-              </RoleRestrictedRoute>
-            }
-          />
-          <Route
-            path="pagos/:id/detalles"
-            element={
-              <RoleRestrictedRoute
-                allowedRoles={[
-                  'administrador',
-                  'jefe de grupo',
-                  'jefe de rama',
-                ]}
-              >
-                <PagoDetails />
-              </RoleRestrictedRoute>
-            }
-          />
+            {/* Dashboard - Solo para roles con acceso completo */}
+            <Route
+              path="dashboard"
+              element={
+                <RoleRestrictedRoute
+                  allowedRoles={[
+                    'administrador',
+                    'jefe de grupo',
+                    'jefe de rama',
+                  ]}
+                >
+                  <Dashboard />
+                </RoleRestrictedRoute>
+              }
+            />
 
-          {/* Rutas de administración - Solo admin y jefe de grupo */}
-          <Route
-            path="usuarios"
-            element={
-              <RoleRestrictedRoute
-                allowedRoles={['administrador', 'jefe de grupo']}
-              >
-                <UsuariosList />
-              </RoleRestrictedRoute>
-            }
-          />
-          <Route
-            path="usuarios/nuevo"
-            element={
-              <RoleRestrictedRoute
-                allowedRoles={['administrador', 'jefe de grupo']}
-              >
-                <UsuarioForm />
-              </RoleRestrictedRoute>
-            }
-          />
-          <Route
-            path="usuarios/:id/editar"
-            element={
-              <RoleRestrictedRoute
-                allowedRoles={['administrador', 'jefe de grupo']}
-              >
-                <UsuarioForm />
-              </RoleRestrictedRoute>
-            }
-          />
-          <Route
-            path="usuarios/:id/detalles"
-            element={
-              <RoleRestrictedRoute
-                allowedRoles={['administrador', 'jefe de grupo']}
-              >
-                <UsuarioDetails />
-              </RoleRestrictedRoute>
-            }
-          />
-          <Route
-            path="configuracion"
-            element={
-              <RoleRestrictedRoute allowedRoles={['administrador']}>
-                <div>Configuración (por implementar)</div>
-              </RoleRestrictedRoute>
-            }
-          />
-          <Route
-            path="perfil"
-            element={<div>Perfil de usuario (por implementar)</div>}
-          />
-        </Route>
+            {/* Socios - Accesible para todos los usuarios autenticados */}
+            <Route path="socios" element={<SociosList />} />
+            <Route path="socios/nuevo" element={<SocioForm />} />
+            <Route path="socios/:id" element={<SocioDetails />} />
+            <Route path="socios/:id/editar" element={<SocioForm />} />
 
-        {/* Ruta por defecto */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+            {/* Pagos - Accesible para todos los usuarios autenticados */}
+            <Route path="pagos" element={<PagosList />} />
+            <Route path="pagos/nuevo" element={<PagoForm />} />
+            <Route path="pagos/:id" element={<PagoDetails />} />
+            <Route path="pagos/:id/editar" element={<PagoForm />} />
+
+            {/* Cambio de contraseña - Accesible para todos los usuarios autenticados */}
+            <Route path="cambio-contrasena" element={<ChangePassword />} />
+
+            {/* Usuarios - Solo para admin y jefe de grupo */}
+            <Route
+              path="usuarios"
+              element={
+                <RoleRestrictedRoute
+                  allowedRoles={['administrador', 'jefe de grupo']}
+                >
+                  <UsuariosList />
+                </RoleRestrictedRoute>
+              }
+            />
+            <Route
+              path="usuarios/nuevo"
+              element={
+                <RoleRestrictedRoute
+                  allowedRoles={['administrador', 'jefe de grupo']}
+                >
+                  <UsuarioForm />
+                </RoleRestrictedRoute>
+              }
+            />
+            <Route
+              path="usuarios/:id"
+              element={
+                <RoleRestrictedRoute
+                  allowedRoles={['administrador', 'jefe de grupo']}
+                >
+                  <UsuarioDetails />
+                </RoleRestrictedRoute>
+              }
+            />
+            <Route
+              path="usuarios/:id/editar"
+              element={
+                <RoleRestrictedRoute
+                  allowedRoles={['administrador', 'jefe de grupo']}
+                >
+                  <UsuarioForm />
+                </RoleRestrictedRoute>
+              }
+            />
+          </Route>
+
+          {/* Catch all - redirigir a inicio */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </AuthHandler>
     </Router>
   )
 }
