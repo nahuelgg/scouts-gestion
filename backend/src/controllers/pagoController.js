@@ -13,6 +13,7 @@ const getPagos = async (req, res) => {
       socio = '',
       mes = '',
       metodoPago = '',
+      tipoPago = '',
       desde = '',
       hasta = '',
       includeDeleted = true,
@@ -140,11 +141,12 @@ const createPago = async (req, res) => {
       fechaPago,
       mesCorrespondiente,
       metodoPago,
+      tipoPago,
       observaciones,
     } = req.body
 
     // Validar campos requeridos
-    if (!socio || !monto || !mesCorrespondiente || !metodoPago) {
+    if (!socio || !monto || !mesCorrespondiente || !metodoPago || !tipoPago) {
       return res.status(400).json({
         message:
           'Socio, monto, mes correspondiente y método de pago son requeridos',
@@ -176,6 +178,7 @@ const createPago = async (req, res) => {
       fechaPago: fechaPago || new Date(),
       mesCorrespondiente,
       metodoPago,
+      tipoPago,
       observaciones,
       registradoPor: req.user._id,
     }
@@ -226,7 +229,8 @@ const createPago = async (req, res) => {
 // @access  Private (jefe de rama, administrador)
 const updatePago = async (req, res) => {
   try {
-    const { monto, fechaPago, metodoPago, observaciones, estado } = req.body
+    const { monto, fechaPago, metodoPago, tipoPago, observaciones, estado } =
+      req.body
 
     const pago = await Pago.findById(req.params.id)
 
@@ -250,6 +254,7 @@ const updatePago = async (req, res) => {
     }
     if (fechaPago) pago.fechaPago = fechaPago
     if (metodoPago) pago.metodoPago = metodoPago
+    if (tipoPago) pago.tipoPago = tipoPago
     if (observaciones !== undefined) pago.observaciones = observaciones
     if (estado) pago.estado = estado
 
@@ -412,6 +417,7 @@ const getResumenPagosSocio = async (req, res) => {
       socio: socioId,
       año,
       mesesPagados,
+      tipoPago,
       totalPagos: pagos.length,
       totalPagado,
       pagos,

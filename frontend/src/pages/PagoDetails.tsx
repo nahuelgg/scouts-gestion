@@ -120,6 +120,36 @@ const PagoDetails: React.FC = () => {
     }
   }
 
+  const getTipoPagoColor = (tipo: string) => {
+    switch (tipo) {
+      case 'mensual':
+        return 'blue'
+      case 'afiliacion':
+        return 'green'
+      case 'campamento':
+        return 'orange'
+      case 'otro':
+        return 'purple'
+      default:
+        return 'default'
+    }
+  }
+
+  const getTipoPagoDisplay = (tipo: string) => {
+    switch (tipo) {
+      case 'mensual':
+        return 'Mensual'
+      case 'afiliacion':
+        return 'Afiliación'
+      case 'campamento':
+        return 'Campamento'
+      case 'otro':
+        return 'Otro'
+      default:
+        return tipo
+    }
+  }
+
   const getEstadoColor = (estado: string) => {
     switch (estado) {
       case 'confirmado':
@@ -214,6 +244,11 @@ const PagoDetails: React.FC = () => {
               <Descriptions.Item label="Método de Pago">
                 <Tag color={getMetodoPagoColor(currentPago.metodoPago)}>
                   {getMetodoPagoDisplay(currentPago.metodoPago)}
+                </Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="Tipo de Pago">
+                <Tag color={getTipoPagoColor(currentPago.tipoPago)}>
+                  {getTipoPagoDisplay(currentPago.tipoPago)}
                 </Tag>
               </Descriptions.Item>
               <Descriptions.Item label="Estado">
@@ -400,6 +435,12 @@ const PagoDetails: React.FC = () => {
               <p>
                 <strong>Método:</strong>{' '}
                 {getMetodoPagoDisplay(currentPago.metodoPago)}
+              </p>
+              <p>
+                <strong>Tipo:</strong>{' '}
+                <Tag color="green">
+                  {currentPago.tipoPago.replace('_', ' ').toUpperCase()}
+                </Tag>
               </p>
               <p>
                 <strong>Estado:</strong> {getEstadoDisplay(currentPago.estado)}

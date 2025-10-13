@@ -54,6 +54,11 @@ const validateCreatePago = [
     .withMessage('El método de pago es requerido')
     .isIn(['efectivo', 'transferencia', 'tarjeta_debito', 'tarjeta_credito'])
     .withMessage('Método de pago inválido'),
+  body('tipoPago')
+    .notEmpty()
+    .withMessage('El tipo de pago es requerido')
+    .isIn(['mensual', 'afiliacion', 'campamento', 'otro'])
+    .withMessage('Tipo de pago inválido'),
 
   body('observaciones')
     .optional({ nullable: true, checkFalsy: true })
@@ -117,6 +122,10 @@ const validateUpdatePago = [
     .optional()
     .isIn(['efectivo', 'transferencia', 'tarjeta_debito', 'tarjeta_credito'])
     .withMessage('Método de pago inválido'),
+  body('tipoPago')
+    .optional()
+    .isIn(['mensual', 'afiliacion', 'campamento', 'otro'])
+    .withMessage('Tipo de pago inválido'),
 
   body('observaciones')
     .optional({ nullable: true, checkFalsy: true })
@@ -191,6 +200,10 @@ const validatePagoQuery = [
     .optional()
     .isIn(['efectivo', 'transferencia', 'tarjeta_debito', 'tarjeta_credito'])
     .withMessage('Método de pago inválido'),
+  query('tipoPago')
+    .optional()
+    .isIn(['mensual', 'afiliacion', 'campamento', 'otro'])
+    .withMessage('Tipo de pago inválido'),
 
   query('estado')
     .optional()

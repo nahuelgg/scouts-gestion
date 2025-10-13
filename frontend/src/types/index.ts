@@ -66,6 +66,7 @@ export interface Pago {
     | 'transferencia'
     | 'tarjeta_debito'
     | 'tarjeta_credito'
+  tipoPago: 'mensual' | 'afiliacion' | 'campamento' | 'otro'
   comprobante?: {
     filename: string
     originalName: string
@@ -135,6 +136,7 @@ export interface PagoFormData {
     | 'transferencia'
     | 'tarjeta_debito'
     | 'tarjeta_credito'
+  tipoPago: 'mensual' | 'afiliacion' | 'campamento' | 'otro'
   observaciones?: string
   comprobante?: File
 }

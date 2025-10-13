@@ -6,7 +6,7 @@
   "scripts": {
     "start": "kill-port 3001 && node src/server.js",
     "dev": "kill-port 3001 && nodemon src/server.js",
-    "init-db": "node src/init-db.js",
+    "init-db": "node scripts/database/init-db.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {

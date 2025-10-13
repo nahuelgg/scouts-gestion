@@ -53,6 +53,7 @@ const PagosList: React.FC = () => {
   const [searchText, setSearchText] = useState('')
   const [filteredPagos, setFilteredPagos] = useState<Pago[]>([])
   const [selectedMetodoPago, setSelectedMetodoPago] = useState('')
+  const [selectedTipoPago, setSelectedTipoPago] = useState('')
   const [selectedMes, setSelectedMes] = useState('')
   const [dateRange, setDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs] | null>(
     null
@@ -133,7 +134,8 @@ const PagosList: React.FC = () => {
             .includes(searchText.toLowerCase()) ||
           pago.socio?.dni?.includes(searchText) ||
           pago.mesCorrespondiente.includes(searchText) ||
-          pago.metodoPago.toLowerCase().includes(searchText.toLowerCase())
+          pago.metodoPago.toLowerCase().includes(searchText.toLowerCase()) ||
+          pago.tipoPago.toLowerCase().includes(searchText.toLowerCase())
       )
     }
 
@@ -141,6 +143,12 @@ const PagosList: React.FC = () => {
     if (selectedMetodoPago) {
       filtered = filtered.filter(
         (pago: Pago) => pago.metodoPago === selectedMetodoPago
+      )
+    }
+    // Filtrar por tipo de pago
+    if (selectedTipoPago) {
+      filtered = filtered.filter(
+        (pago: Pago) => pago.tipoPago === selectedTipoPago
       )
     }
 
@@ -165,6 +173,7 @@ const PagosList: React.FC = () => {
     pagos,
     searchText,
     selectedMetodoPago,
+    selectedTipoPago,
     selectedMes,
     dateRange,
     canOnlyView,
@@ -267,6 +276,36 @@ const PagosList: React.FC = () => {
     }
   }
 
+  const getTipoPagoColor = (tipo: string) => {
+    switch (tipo) {
+      case 'mensual':
+        return 'blue'
+      case 'afiliacion':
+        return 'green'
+      case 'campamento':
+        return 'orange'
+      case 'otro':
+        return 'purple'
+      default:
+        return 'default'
+    }
+  }
+
+  const getTipoPagoDisplay = (tipo: string) => {
+    switch (tipo) {
+      case 'mensual':
+        return 'Mensual'
+      case 'afiliacion':
+        return 'Afiliación'
+      case 'campamento':
+        return 'Campamento'
+      case 'otro':
+        return 'Otro'
+      default:
+        return tipo
+    }
+  }
+
   const getEstadoColor = (estado: string) => {
     switch (estado) {
       case 'confirmado':
@@ -345,6 +384,16 @@ const PagosList: React.FC = () => {
         </Tag>
       ),
       sorter: (a: Pago, b: Pago) => a.metodoPago.localeCompare(b.metodoPago),
+    },
+    {
+      title: 'Tipo de Pago',
+      key: 'tipoPago',
+      render: (record: Pago) => (
+        <Tag color={getTipoPagoColor(record.tipoPago)}>
+          {getTipoPagoDisplay(record.tipoPago)}
+        </Tag>
+      ),
+      sorter: (a: Pago, b: Pago) => a.tipoPago.localeCompare(b.tipoPago),
     },
     {
       title: 'Estado',
@@ -493,7 +542,7 @@ const PagosList: React.FC = () => {
           <Col xs={24} sm={12} md={4}>
             <Select
               placeholder="Método de pago"
-              value={selectedMetodoPago}
+              value={selectedMetodoPago || null}
               onChange={setSelectedMetodoPago}
               style={{ width: '100%' }}
               allowClear
@@ -504,10 +553,25 @@ const PagosList: React.FC = () => {
               <Option value="tarjeta_credito">Tarjeta Crédito</Option>
             </Select>
           </Col>
+
+          <Col xs={24} sm={12} md={4}>
+            <Select
+              placeholder="Tipo de pago"
+              value={selectedTipoPago || null}
+              onChange={setSelectedTipoPago}
+              style={{ width: '100%' }}
+              allowClear
+            >
+              <Option value="mensual">Mensual</Option>
+              <Option value="afiliacion">Afiliación</Option>
+              <Option value="campamento">Campamento</Option>
+              <Option value="otro">Otro</Option>
+            </Select>
+          </Col>
           <Col xs={24} sm={12} md={4}>
             <Select
               placeholder="Mes"
-              value={selectedMes}
+              value={selectedMes || null}
               onChange={setSelectedMes}
               style={{ width: '100%' }}
               allowClear

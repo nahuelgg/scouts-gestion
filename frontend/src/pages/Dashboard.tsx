@@ -148,6 +148,14 @@ const Dashboard: React.FC = () => {
         <Tag color="blue">{metodo.replace('_', ' ').toUpperCase()}</Tag>
       ),
     },
+    {
+      title: 'Tipo',
+      dataIndex: 'tipoPago',
+      key: 'tipoPago',
+      render: (tipo: string) => (
+        <Tag color="green">{tipo.replace('_', ' ').toUpperCase()}</Tag>
+      ),
+    },
   ]
 
   const canManageSocios = [

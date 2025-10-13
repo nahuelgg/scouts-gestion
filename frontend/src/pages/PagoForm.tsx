@@ -89,6 +89,7 @@ const PagoForm: React.FC = () => {
         fechaPago: dayjs(currentPago.fechaPago),
         mesCorrespondiente: currentPago.mesCorrespondiente,
         metodoPago: currentPago.metodoPago,
+        tipoPago: currentPago.tipoPago,
         observaciones: currentPago.observaciones,
         estado: currentPago.estado,
       })
@@ -152,6 +153,7 @@ const PagoForm: React.FC = () => {
     formData.append('fechaPago', values.fechaPago.toISOString())
     formData.append('mesCorrespondiente', values.mesCorrespondiente)
     formData.append('metodoPago', values.metodoPago)
+    formData.append('tipoPago', values.tipoPago)
 
     if (values.observaciones) {
       formData.append('observaciones', values.observaciones)
@@ -258,6 +260,7 @@ const PagoForm: React.FC = () => {
             fechaPago: dayjs(),
             mesCorrespondiente: dayjs().format('YYYY-MM'),
             metodoPago: 'efectivo',
+            tipoPago: 'mensual',
             estado: 'confirmado',
           }}
         >
@@ -448,6 +451,26 @@ const PagoForm: React.FC = () => {
                   <Option value="transferencia">Transferencia</Option>
                   <Option value="tarjeta_debito">Tarjeta Débito</Option>
                   <Option value="tarjeta_credito">Tarjeta Crédito</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+
+            <Col xs={24} md={12}>
+              <Form.Item
+                name="tipoPago"
+                label="Tipo de Pago"
+                rules={[
+                  {
+                    required: true,
+                    message: 'El tipo de pago es requerido',
+                  },
+                ]}
+              >
+                <Select placeholder="Selecciona el tipo de pago">
+                  <Option value="mensual">Mensual</Option>
+                  <Option value="afiliacion">Afiliación</Option>
+                  <Option value="campamento">Campamento</Option>
+                  <Option value="otro">Otro</Option>
                 </Select>
               </Form.Item>
             </Col>

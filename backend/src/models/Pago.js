@@ -33,6 +33,11 @@ const pagoSchema = new mongoose.Schema(
       required: true,
       enum: ['efectivo', 'transferencia', 'tarjeta_debito', 'tarjeta_credito'],
     },
+    tipoPago: {
+      type: String,
+      required: true,
+      enum: ['mensual', 'afiliacion', 'campamento', 'otro'],
+    },
     comprobante: {
       filename: String,
       originalName: String,
