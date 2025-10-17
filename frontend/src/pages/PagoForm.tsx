@@ -16,6 +16,7 @@ import {
   InputNumber,
   Switch,
 } from 'antd'
+import type { UploadFile, UploadChangeParam } from 'antd/es/upload/interface'
 import {
   SaveOutlined,
   ArrowLeftOutlined,
@@ -32,8 +33,12 @@ import {
 } from '../store/pagosSlice'
 import { personasAPI } from '../services/api'
 import dayjs from 'dayjs'
-import type { Persona, PagoFormData } from '../types'
-import type { UploadFile } from 'antd/es/upload/interface'
+import {
+  Pago,
+  PagoFormData,
+  Persona,
+  PagoFormValues, // ← Nueva interfaz agregada
+} from '../types'
 
 const { Title } = Typography
 const { Option } = Select
@@ -128,7 +133,7 @@ const PagoForm: React.FC = () => {
       // Si es jefe de rama, solo mostrar personas de su rama
       if (userRole === 'jefe de rama' && userRamaId) {
         allPersonas = allPersonas.filter(
-          (persona: any) => persona.rama?._id === userRamaId
+          (persona: Persona) => persona.rama?._id === userRamaId
         )
       }
 
@@ -140,7 +145,7 @@ const PagoForm: React.FC = () => {
     }
   }
 
-  const onFinish = async (values: any) => {
+  const onFinish = async (values: PagoFormValues) => {
     const formData = new FormData()
 
     // Normalizar el monto: reemplazar comas por puntos y convertir a número
@@ -182,7 +187,7 @@ const PagoForm: React.FC = () => {
     }
   }
 
-  const handleUploadChange = (info: any) => {
+  const handleUploadChange = (info: UploadChangeParam) => {
     let newFileList = [...info.fileList]
 
     // Limitar a un solo archivo

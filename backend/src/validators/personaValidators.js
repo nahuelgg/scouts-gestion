@@ -7,6 +7,7 @@ const mongoose = require('mongoose')
 const validateCreatePersona = [
   body('nombre')
     .trim()
+    .escape() //  Sanitización HTML agregada
     .notEmpty()
     .withMessage('El nombre es requerido')
     .isLength({ min: 2, max: 50 })
@@ -16,6 +17,7 @@ const validateCreatePersona = [
 
   body('apellido')
     .trim()
+    .escape() //  Sanitización HTML agregada
     .notEmpty()
     .withMessage('El apellido es requerido')
     .isLength({ min: 2, max: 50 })
@@ -32,6 +34,7 @@ const validateCreatePersona = [
 
   body('telefono')
     .trim()
+    .escape() //  Sanitización HTML agregada
     .notEmpty()
     .withMessage('El teléfono es requerido')
     .matches(/^[\d\s\-\+\(\)]{8,20}$/)
@@ -61,6 +64,7 @@ const validateCreatePersona = [
 
   body('direccion.calle')
     .trim()
+    .escape() //  Sanitización HTML agregada
     .notEmpty()
     .withMessage('La calle es requerida')
     .isLength({ min: 3, max: 100 })
@@ -68,6 +72,7 @@ const validateCreatePersona = [
 
   body('direccion.numero')
     .trim()
+    .escape() //  Sanitización HTML agregada
     .notEmpty()
     .withMessage('El número es requerido')
     .isLength({ min: 1, max: 10 })
@@ -75,6 +80,7 @@ const validateCreatePersona = [
 
   body('direccion.ciudad')
     .trim()
+    .escape() //  Sanitización HTML agregada
     .notEmpty()
     .withMessage('La ciudad es requerida')
     .isLength({ min: 2, max: 50 })
@@ -109,6 +115,7 @@ const validateUpdatePersona = [
   body('nombre')
     .optional()
     .trim()
+    .escape() // 🛡️ Sanitización HTML agregada
     .isLength({ min: 2, max: 50 })
     .withMessage('El nombre debe tener entre 2 y 50 caracteres')
     .matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/)
@@ -117,6 +124,7 @@ const validateUpdatePersona = [
   body('apellido')
     .optional()
     .trim()
+    .escape() //  Sanitización HTML agregada
     .isLength({ min: 2, max: 50 })
     .withMessage('El apellido debe tener entre 2 y 50 caracteres')
     .matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/)
@@ -125,12 +133,14 @@ const validateUpdatePersona = [
   body('dni')
     .optional()
     .trim()
+    .escape() //  Sanitización HTML agregada
     .matches(/^\d{7,8}$/)
     .withMessage('El DNI debe tener 7 u 8 dígitos'),
 
   body('telefono')
     .optional()
     .trim()
+    .escape() //  Sanitización HTML agregada
     .matches(/^[\d\s\-\+\(\)]{8,20}$/)
     .withMessage('Formato de teléfono inválido'),
 
@@ -148,18 +158,21 @@ const validateUpdatePersona = [
   body('direccion.calle')
     .optional()
     .trim()
+    .escape() //  Sanitización HTML agregada
     .isLength({ min: 3, max: 100 })
     .withMessage('La calle debe tener entre 3 y 100 caracteres'),
 
   body('direccion.numero')
     .optional()
     .trim()
+    .escape() //  Sanitización HTML agregada
     .isLength({ min: 1, max: 10 })
     .withMessage('El número debe tener entre 1 y 10 caracteres'),
 
   body('direccion.ciudad')
     .optional()
     .trim()
+    .escape() //  Sanitización HTML agregada
     .isLength({ min: 2, max: 50 })
     .withMessage('La ciudad debe tener entre 2 y 50 caracteres')
     .matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/)

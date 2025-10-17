@@ -1,4 +1,4 @@
-import axios from 'axios'
+import axios, { AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios'
 import type { ApiConfig, ApiError } from '../types/api'
 import { APP_CONSTANTS, validateConfig } from '../types/api'
 import { showFrontendConfigStatus } from '../utils/configValidator'
@@ -43,9 +43,11 @@ const redirectToLogin = (): void => {
 }
 
 // Función helper para configurar headers de autenticación
-const setAuthHeader = (config: any): any => {
+const setAuthHeader = (
+  config: InternalAxiosRequestConfig
+): InternalAxiosRequestConfig => {
   const token = getAuthToken()
-  if (token) {
+  if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`
   }
   return config

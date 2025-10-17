@@ -7,6 +7,7 @@ const mongoose = require('mongoose')
 const validateCreateUsuario = [
   body('username')
     .trim()
+    .escape()
     .notEmpty()
     .withMessage('El nombre de usuario es requerido')
     .isLength({ min: 3, max: 30 })
@@ -60,6 +61,7 @@ const validateUpdateUsuario = [
   body('username')
     .optional()
     .trim()
+    .escape()
     .isLength({ min: 3, max: 30 })
     .withMessage('El nombre de usuario debe tener entre 3 y 30 caracteres')
     .matches(/^[a-zA-Z0-9._-]+$/)
@@ -144,6 +146,7 @@ const validateUsuarioQuery = [
   query('search')
     .optional()
     .trim()
+    .escape()
     .isLength({ min: 1, max: 50 })
     .withMessage('La búsqueda debe tener entre 1 y 50 caracteres'),
 

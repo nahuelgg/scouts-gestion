@@ -150,16 +150,20 @@ const MainLayout: React.FC = () => {
             marginBottom: 16,
           }}
         >
-          <Typography.Title
-            level={4}
+          <a
+            onClick={() => navigate('/dashboard')}
             style={{
               margin: 0,
-              color: '#1890ff',
-              fontSize: collapsed ? '16px' : '18px',
+              color: '#2461dbff',
+              fontSize: collapsed ? '18px' : '22px',
+              fontWeight: 900,
+              textDecoration: 'none',
+              cursor: 'pointer',
+              lineHeight: 1.35,
             }}
           >
-            {collapsed ? 'S' : 'Scouts'}
-          </Typography.Title>
+            {collapsed ? 'T' : 'Tantanaku'}
+          </a>
         </div>
 
         <Menu

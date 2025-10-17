@@ -20,6 +20,7 @@ import {
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAppSelector, useAppDispatch } from '../utils/hooks'
 import { fetchPersonas } from '../store/personasSlice'
+import { Persona } from '../types'
 import { fetchPagos } from '../store/pagosSlice'
 import { formatCurrency } from '../utils/currency'
 
@@ -47,18 +48,17 @@ const Dashboard: React.FC = () => {
         dispatch(fetchPersonas({ limit: 500 })) // Límite razonable para evitar problemas de performance
       }
 
-      // Cargar pagos del mes actual - solo los necesarios para el Dashboard
-      const currentMonth = new Date().toISOString().slice(0, 7) // YYYY-MM
+      // Cargar pagos con eliminados incluidos para estadísticas precisas
       if (force || pagos.length === 0) {
         dispatch(
           fetchPagos({
-            limit: 200, // Límite optimizado - suficiente para mostrar estadísticas y pagos recientes
-            mes: currentMonth, // Filtrar por mes actual para reducir carga
+            includeDeleted: true, // ✅ Incluir eliminados para estadísticas correctas
+            limit: 200, // Límite optimizado
           })
         ).catch((error) => {
           console.error('Error cargando datos del Dashboard:', error)
           // En caso de error, intentar cargar sin filtro de mes
-          dispatch(fetchPagos({ limit: 100 }))
+          dispatch(fetchPagos({ limit: 100, includeDeleted: true }))
         })
       }
     },
@@ -86,9 +86,12 @@ const Dashboard: React.FC = () => {
     const totalSocios = personas.length
     const sociosActivos = personas.filter((persona) => persona.activo).length
 
-    // Para pagos del mes, usar solo los pagos cargados del mes actual
+    // Filtrar pagos activos (no eliminados) para estadísticas
+    const pagosActivos = pagos.filter((pago) => !pago.deleted)
+
+    // Para pagos del mes, usar solo pagos activos del mes actual
     const currentMonth = new Date().toISOString().slice(0, 7)
-    const pagosDelMes = pagos.filter((pago) => {
+    const pagosDelMes = pagosActivos.filter((pago) => {
       const fechaString =
         typeof pago.fechaPago === 'string'
           ? pago.fechaPago
@@ -110,9 +113,10 @@ const Dashboard: React.FC = () => {
     }
   }, [personas, pagos])
 
-  // Obtener pagos recientes para la tabla
+  // Obtener pagos recientes para la tabla (solo pagos activos)
   const recentPayments = useMemo(() => {
-    return [...pagos]
+    const pagosActivos = pagos.filter((pago) => !pago.deleted)
+    return [...pagosActivos]
       .sort((a, b) => {
         const dateA = new Date(a.fechaPago).getTime()
         const dateB = new Date(b.fechaPago).getTime()
@@ -126,7 +130,7 @@ const Dashboard: React.FC = () => {
       title: 'Socio',
       dataIndex: ['socio'],
       key: 'socio',
-      render: (socio: any) => `${socio?.nombre} ${socio?.apellido}`,
+      render: (socio: Persona) => `${socio?.nombre} ${socio?.apellido}`,
     },
     {
       title: 'Monto',

@@ -7,6 +7,7 @@ const mongoose = require('mongoose')
 const validateCreateRama = [
   body('nombre')
     .trim()
+    .escape()
     .notEmpty()
     .withMessage('El nombre de la rama es requerido')
     .isIn(['manada', 'unidad', 'caminantes', 'rovers'])
@@ -14,6 +15,7 @@ const validateCreateRama = [
 
   body('descripcion')
     .trim()
+    .escape()
     .notEmpty()
     .withMessage('La descripción es requerida')
     .isLength({ min: 10, max: 200 })
@@ -54,12 +56,14 @@ const validateUpdateRama = [
   body('nombre')
     .optional()
     .trim()
+    .escape()
     .isIn(['manada', 'unidad', 'caminantes', 'rovers'])
     .withMessage('El nombre debe ser: manada, unidad, caminantes o rovers'),
 
   body('descripcion')
     .optional()
     .trim()
+    .escape()
     .isLength({ min: 10, max: 200 })
     .withMessage('La descripción debe tener entre 10 y 200 caracteres'),
 

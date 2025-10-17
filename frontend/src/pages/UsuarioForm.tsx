@@ -29,7 +29,13 @@ import {
   clearCurrentUsuario,
 } from '../store/usuariosSlice'
 import { personasAPI, rolesAPI } from '../services/api'
-import { UsuarioFormData, Persona, Rol } from '../types'
+import {
+  User,
+  Persona,
+  Rol,
+  UsuarioFormData,
+  UsuarioFormValues, // ← Nueva interfaz agregada
+} from '../types'
 
 const { Title } = Typography
 const { Option } = Select
@@ -138,7 +144,7 @@ const UsuarioForm: React.FC = () => {
     setNewPassword(e.target.value)
   }
 
-  const onFinish = async (values: any) => {
+  const onFinish = async (values: UsuarioFormValues) => {
     const formData: UsuarioFormData = {
       username: values.username,
       password: values.password,

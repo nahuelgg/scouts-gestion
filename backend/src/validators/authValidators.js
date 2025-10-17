@@ -6,6 +6,7 @@ const { body } = require('express-validator')
 const validateLogin = [
   body('username')
     .trim()
+    .escape()
     .notEmpty()
     .withMessage('El nombre de usuario es requerido')
     .isLength({ min: 3, max: 50 })

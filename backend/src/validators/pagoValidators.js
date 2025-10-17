@@ -63,6 +63,7 @@ const validateCreatePago = [
   body('observaciones')
     .optional({ nullable: true, checkFalsy: true })
     .trim()
+    .escape()
     .isLength({ max: 500 })
     .withMessage('Las observaciones no pueden exceder 500 caracteres'),
 
@@ -130,6 +131,7 @@ const validateUpdatePago = [
   body('observaciones')
     .optional({ nullable: true, checkFalsy: true })
     .trim()
+    .escape()
     .isLength({ max: 500 })
     .withMessage('Las observaciones no pueden exceder 500 caracteres'),
 

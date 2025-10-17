@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
-import { User, UsuarioFormData, ApiError } from '../types'
+import { User, UsuarioFormData, ApiError, FetchUsuariosParams } from '../types'
 import { usuariosAPI } from '../services/api'
 
 interface UsuariosState {
@@ -25,9 +25,9 @@ const initialState: UsuariosState = {
 // Async thunks
 export const fetchUsuarios = createAsyncThunk(
   'usuarios/fetchUsuarios',
-  async (_, { rejectWithValue }) => {
+  async (params: FetchUsuariosParams = {}, { rejectWithValue }) => {
     try {
-      const response = await usuariosAPI.getAll()
+      const response = await usuariosAPI.getAll(params)
       return response
     } catch (error: unknown) {
       const apiError = error as ApiError

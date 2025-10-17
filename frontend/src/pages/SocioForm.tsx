@@ -22,7 +22,12 @@ import {
   clearCurrentPersona,
 } from '../store/personasSlice'
 import { ramasAPI } from '../services/api'
-import { PersonaFormData, Rama } from '../types'
+import {
+  Persona,
+  PersonaFormData,
+  Rama,
+  SocioFormValues, // ← Nueva interfaz agregada
+} from '../types'
 import dayjs from 'dayjs'
 
 const { Title } = Typography
@@ -94,7 +99,7 @@ const SocioForm: React.FC = () => {
     }
   }
 
-  const onFinish = async (values: any) => {
+  const onFinish = async (values: SocioFormValues) => {
     const formData: PersonaFormData = {
       nombre: values.nombre,
       apellido: values.apellido,
