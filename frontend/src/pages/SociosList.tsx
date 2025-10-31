@@ -1,5 +1,14 @@
 import React, { useEffect, useMemo } from 'react'
-import { Card, Row, Col, Typography, Space, Button, Statistic, message } from 'antd'
+import {
+  Card,
+  Row,
+  Col,
+  Typography,
+  Space,
+  Button,
+  Statistic,
+  message,
+} from 'antd'
 import { PlusOutlined, UserOutlined } from '@ant-design/icons'
 import { useAppDispatch, useAppSelector } from '../utils/hooks'
 import { clearError } from '../store/personasSlice'
@@ -13,7 +22,10 @@ import { useSociosActions } from '../hooks/useSociosActions'
 // Componentes especializados
 import { SociosFiltersComponent } from '../components/Socios/SociosFilters'
 import { SociosTable } from '../components/Socios/SociosTable'
-import { DeleteSocioModal, RestoreSocioModal } from '../components/Socios/SociosModals'
+import {
+  DeleteSocioModal,
+  RestoreSocioModal,
+} from '../components/Socios/SociosModals'
 
 // Utils
 import { isPersonaMayor } from '../utils/socios/display'
@@ -24,20 +36,37 @@ const SociosList: React.FC = () => {
   const dispatch = useAppDispatch()
 
   // Redux state
-  const { personas, isLoading, error } = useAppSelector((state) => state.personas)
+  const { personas, isLoading, error } = useAppSelector(
+    (state) => state.personas
+  )
   const { user } = useAppSelector((state) => state.auth)
 
   // Hooks customizados
-  const { filters, filteredPersonas, updateFilters, clearFilters, hasFullAccess } = useSociosFilters(personas, user)
+  const {
+    filters,
+    filteredPersonas,
+    updateFilters,
+    clearFilters,
+    hasFullAccess,
+    isJefeDeRama,
+  } = useSociosFilters(personas, user)
   const permissions = useSociosPermissions(user)
   const actions = useSociosActions()
 
   // Estadísticas calculadas
   const statistics = useMemo(() => {
-    const sociosActivos = filteredPersonas.filter(persona => !persona.deleted && persona.activo)
-    const sociosInactivos = filteredPersonas.filter(persona => !persona.deleted && !persona.activo)
-    const mayoresDeEdad = filteredPersonas.filter(persona => !persona.deleted && isPersonaMayor(persona))
-    const educadores = filteredPersonas.filter(persona => !persona.deleted && persona.funcion === 'educador')
+    const sociosActivos = filteredPersonas.filter(
+      (persona) => !persona.deleted && persona.activo
+    )
+    const sociosInactivos = filteredPersonas.filter(
+      (persona) => !persona.deleted && !persona.activo
+    )
+    const mayoresDeEdad = filteredPersonas.filter(
+      (persona) => !persona.deleted && isPersonaMayor(persona)
+    )
+    const educadores = filteredPersonas.filter(
+      (persona) => !persona.deleted && persona.funcion === 'educador'
+    )
 
     return {
       totalSocios: sociosActivos.length,
@@ -118,6 +147,7 @@ const SociosList: React.FC = () => {
           onClearFilters={clearFilters}
           ramas={actions.ramas}
           hasFullAccess={hasFullAccess}
+          isJefeDeRama={isJefeDeRama}
         />
 
         {/* Tabla */}

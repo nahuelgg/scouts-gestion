@@ -14,6 +14,7 @@ interface SociosFiltersComponentProps {
   onClearFilters: () => void
   ramas: Rama[]
   hasFullAccess: boolean
+  isJefeDeRama?: boolean
 }
 
 export const SociosFiltersComponent: React.FC<SociosFiltersComponentProps> = ({
@@ -22,10 +23,13 @@ export const SociosFiltersComponent: React.FC<SociosFiltersComponentProps> = ({
   onClearFilters,
   ramas,
   hasFullAccess,
+  isJefeDeRama = false,
 }) => {
+  const canSearch = hasFullAccess || isJefeDeRama
+
   return (
     <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
-      {hasFullAccess && (
+      {canSearch && (
         <Col xs={24} sm={12} md={6}>
           <Search
             placeholder="Buscar por nombre, DNI, email..."

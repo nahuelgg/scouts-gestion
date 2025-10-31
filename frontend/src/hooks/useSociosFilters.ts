@@ -23,12 +23,12 @@ export const useSociosFilters = (personas: Persona[], user: User | null) => {
   const userRamaId = user?.persona?.rama?._id
   const userPersonaId = user?.persona?._id
 
-  const hasFullAccess = [
-    'administrador',
-    'jefe de grupo',
-    'jefe de rama',
-  ].includes(userRole || '')
-  const isRestrictedUser = !userRole || !hasFullAccess
+  const hasFullAccess = ['administrador', 'jefe de grupo'].includes(
+    userRole || ''
+  )
+
+  const isJefeDeRama = userRole === 'jefe de rama'
+  const isRestrictedUser = !userRole || (!hasFullAccess && !isJefeDeRama)
 
   // Lógica de filtrado memoizada
   const filteredPersonas = useMemo(() => {
@@ -41,8 +41,15 @@ export const useSociosFilters = (personas: Persona[], user: User | null) => {
       )
     }
 
+    // FILTRO JEFE DE RAMA: Solo ve personas de su rama
+    if (isJefeDeRama && userRamaId) {
+      filtered = filtered.filter(
+        (persona: Persona) => persona.rama?._id === userRamaId
+      )
+    }
+
     // Filtrar por búsqueda de texto
-    if (filters.searchText && hasFullAccess) {
+    if (filters.searchText && (hasFullAccess || isJefeDeRama)) {
       const searchLower = filters.searchText.toLowerCase()
       filtered = filtered.filter(
         (persona: Persona) =>
@@ -54,7 +61,7 @@ export const useSociosFilters = (personas: Persona[], user: User | null) => {
       )
     }
 
-    // Filtrar por rama
+    // Filtrar por rama (solo para admins y jefe de grupo)
     if (filters.selectedRama && hasFullAccess) {
       filtered = filtered.filter(
         (persona: Persona) => persona.rama?._id === filters.selectedRama
@@ -97,7 +104,15 @@ export const useSociosFilters = (personas: Persona[], user: User | null) => {
     }
 
     return filtered
-  }, [personas, filters, hasFullAccess, isRestrictedUser, userPersonaId])
+  }, [
+    personas,
+    filters,
+    hasFullAccess,
+    isJefeDeRama,
+    isRestrictedUser,
+    userPersonaId,
+    userRamaId,
+  ])
 
   const updateFilters = (newFilters: Partial<SociosFilters>) => {
     setFilters((prev) => ({ ...prev, ...newFilters }))
@@ -119,6 +134,7 @@ export const useSociosFilters = (personas: Persona[], user: User | null) => {
     updateFilters,
     clearFilters,
     hasFullAccess,
+    isJefeDeRama,
     isRestrictedUser,
   }
 }

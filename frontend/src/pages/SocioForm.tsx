@@ -42,22 +42,32 @@ const SocioForm: React.FC = () => {
   const { currentPersona, isLoading, error } = useAppSelector(
     (state) => state.personas
   )
+  const { user } = useAppSelector((state) => state.auth)
   const [ramas, setRamas] = useState<Rama[]>([])
   const [loadingRamas, setLoadingRamas] = useState(false)
 
   const isEditing = !!id
+
+  // Verificar si el usuario es jefe de rama
+  const isJefeDeRama = user?.rol?.nombre === 'jefe de rama'
+  const userRamaId = user?.persona?.rama?._id
 
   useEffect(() => {
     loadRamas()
 
     if (isEditing && id) {
       dispatch(fetchPersonaById(id))
+    } else if (isJefeDeRama && userRamaId) {
+      // Si es jefe de rama y está creando una nueva persona, pre-seleccionar su rama
+      form.setFieldsValue({
+        rama: userRamaId,
+      })
     }
 
     return () => {
       dispatch(clearCurrentPersona())
     }
-  }, [id, isEditing]) // Removido dispatch
+  }, [id, isEditing, isJefeDeRama, userRamaId]) // Removido dispatch
 
   useEffect(() => {
     if (currentPersona && isEditing) {
@@ -260,15 +270,18 @@ const SocioForm: React.FC = () => {
                 <Select
                   placeholder="Selecciona una rama"
                   loading={loadingRamas}
-                  allowClear
+                  allowClear={!isJefeDeRama}
+                  disabled={isJefeDeRama}
                 >
-                  {ramas.map((rama) => (
-                    <Option key={rama._id} value={rama._id}>
-                      {rama.nombre.charAt(0).toUpperCase() +
-                        rama.nombre.slice(1)}
-                      ({rama.edadMinima}-{rama.edadMaxima} años)
-                    </Option>
-                  ))}
+                  {ramas
+                    .filter((rama) => !isJefeDeRama || rama._id === userRamaId)
+                    .map((rama) => (
+                      <Option key={rama._id} value={rama._id}>
+                        {rama.nombre.charAt(0).toUpperCase() +
+                          rama.nombre.slice(1)}
+                        ({rama.edadMinima}-{rama.edadMaxima} años)
+                      </Option>
+                    ))}
                 </Select>
               </Form.Item>
             </Col>
