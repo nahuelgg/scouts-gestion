@@ -1,6 +1,8 @@
 const Pago = require('../models/Pago')
 const Persona = require('../models/Persona')
 const logger = require('../utils/logger')
+const path = require('path')
+const fs = require('fs')
 
 // @desc    Obtener todos los pagos
 // @route   GET /api/pagos
@@ -186,13 +188,44 @@ const createPago = async (req, res) => {
     // Si hay archivo de comprobante
     if (req.file) {
       const year = new Date().getFullYear()
-      pagoData.comprobante = {
+
+      // Información básica del archivo
+      const comprobanteData = {
         filename: req.file.filename,
         originalName: req.file.originalname,
         path: `${year}/${req.file.filename}`,
         size: req.file.size,
         mimetype: req.file.mimetype,
       }
+
+      // Agregar información de validación avanzada si está disponible
+      if (req.fileValidation) {
+        comprobanteData.validation = {
+          riskLevel: req.fileValidation.riskLevel,
+          riskScore: req.fileValidation.riskScore,
+          fileHash: req.fileValidation.fileHash,
+          processingTime: req.fileValidation.processingTime,
+          detectedType: req.fileValidation.metadata?.detectedType,
+          validationDate: new Date().toISOString(),
+        }
+
+        // Si hubo warnings, registrarlos
+        if (
+          req.fileValidation.warnings &&
+          req.fileValidation.warnings.length > 0
+        ) {
+          comprobanteData.validation.warnings = req.fileValidation.warnings
+        }
+
+        // Marcar para revisión si es riesgo medio (ya que los de alto van a cuarentena)
+        if (req.fileValidation.riskLevel === 'MEDIUM') {
+          comprobanteData.needsReview = true
+          comprobanteData.reviewReason =
+            'Archivo con riesgo medio requiere revisión'
+        }
+      }
+
+      pagoData.comprobante = comprobanteData
     }
 
     const pago = await Pago.create(pagoData)
@@ -275,13 +308,44 @@ const updatePago = async (req, res) => {
       }
 
       const year = new Date().getFullYear()
-      pago.comprobante = {
+
+      // Información básica del archivo
+      const comprobanteData = {
         filename: req.file.filename,
         originalName: req.file.originalname,
         path: `${year}/${req.file.filename}`,
         size: req.file.size,
         mimetype: req.file.mimetype,
       }
+
+      // Agregar información de validación avanzada si está disponible
+      if (req.fileValidation) {
+        comprobanteData.validation = {
+          riskLevel: req.fileValidation.riskLevel,
+          riskScore: req.fileValidation.riskScore,
+          fileHash: req.fileValidation.fileHash,
+          processingTime: req.fileValidation.processingTime,
+          detectedType: req.fileValidation.metadata?.detectedType,
+          validationDate: new Date().toISOString(),
+        }
+
+        // Si hubo warnings, registrarlos
+        if (
+          req.fileValidation.warnings &&
+          req.fileValidation.warnings.length > 0
+        ) {
+          comprobanteData.validation.warnings = req.fileValidation.warnings
+        }
+
+        // Marcar para revisión si es riesgo medio
+        if (req.fileValidation.riskLevel === 'MEDIUM') {
+          comprobanteData.needsReview = true
+          comprobanteData.reviewReason =
+            'Archivo con riesgo medio requiere revisión'
+        }
+      }
+
+      pago.comprobante = comprobanteData
     }
 
     await pago.save()

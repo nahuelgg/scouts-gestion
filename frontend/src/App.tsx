@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { Suspense } from 'react'
 import {
   BrowserRouter as Router,
   Routes,
@@ -10,20 +10,27 @@ import { ConfigProvider } from 'antd'
 import { store } from './store'
 import { useAppSelector } from './utils/hooks'
 import AuthHandler from './components/AuthHandler'
-import MainLayout from './components/Layout/MainLayout'
-import Login from './pages/Login'
-import Dashboard from './pages/Dashboard'
-import SociosList from './pages/SociosList'
-import SocioForm from './pages/SocioForm'
-import SocioDetails from './pages/SocioDetails'
-import UsuariosList from './pages/UsuariosList'
-import UsuarioForm from './pages/UsuarioForm'
-import UsuarioDetails from './pages/UsuarioDetails'
-import PagosList from './pages/PagosList'
-import PagoForm from './pages/PagoForm'
-import PagoDetails from './pages/PagoDetails'
-import ChangePassword from './pages/ChangePassword'
+import LoadingSpinner, {
+  withLazyLoading,
+  usePreloadComponent,
+} from './components/LazyLoader'
+import * as LazyComponents from './components/LazyComponents'
 import 'antd/dist/reset.css'
+
+// Componentes con lazy loading
+const Dashboard = withLazyLoading(LazyComponents.Dashboard)
+const Login = withLazyLoading(LazyComponents.Login)
+const MainLayout = withLazyLoading(LazyComponents.MainLayout)
+const SociosList = withLazyLoading(LazyComponents.SociosList)
+const SocioForm = withLazyLoading(LazyComponents.SocioForm)
+const SocioDetails = withLazyLoading(LazyComponents.SocioDetails)
+const UsuariosList = withLazyLoading(LazyComponents.UsuariosList)
+const UsuarioForm = withLazyLoading(LazyComponents.UsuarioForm)
+const UsuarioDetails = withLazyLoading(LazyComponents.UsuarioDetails)
+const PagosList = withLazyLoading(LazyComponents.PagosList)
+const PagoForm = withLazyLoading(LazyComponents.PagoForm)
+const PagoDetails = withLazyLoading(LazyComponents.PagoDetails)
+const ChangePassword = withLazyLoading(LazyComponents.ChangePassword)
 
 // Componente para rutas protegidas
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
@@ -40,6 +47,15 @@ const SmartRedirect: React.FC = () => {
 
   const userRole = user?.rol?.nombre
   const fullAccessRoles = ['administrador', 'jefe de grupo', 'jefe de rama']
+
+  // Precargar componentes según el rol del usuario
+  usePreloadComponent(() => {
+    if (userRole && fullAccessRoles.includes(userRole)) {
+      return LazyComponents.preloadDashboard()
+    } else {
+      return LazyComponents.preloadSociosList()
+    }
+  })
 
   // Si el usuario no tiene rol con acceso completo, redirigir a socios
   if (!userRole || !fullAccessRoles.includes(userRole)) {

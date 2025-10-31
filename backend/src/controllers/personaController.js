@@ -4,7 +4,7 @@ const {
   validateUniqueDNI,
   validateRamaExists,
   validateRequiredPersonaFields,
-} = require('../utils/personaValidations')
+} = require('../validators/personaBusinessValidators')
 const {
   handleServerError,
   handleValidationError,

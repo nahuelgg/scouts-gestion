@@ -4,10 +4,14 @@
   "description": "Backend para sistema de gestión scouts",
   "main": "src/server.js",
   "scripts": {
-    "start": "kill-port 3001 && node src/server.js",
+    "start": "node src/server.js",
+    "start:dev": "kill-port 3001 && node src/server.js",
     "dev": "kill-port 3001 && nodemon src/server.js",
     "init-db": "node scripts/database/init-db.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "create-indexes": "node scripts/create-indexes.js",
+    "test": "NODE_ENV=test jest",
+    "test:watch": "NODE_ENV=test jest --watch",
+    "test:coverage": "NODE_ENV=test jest --coverage"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -21,9 +25,13 @@
     "mongoose": "^7.4.0",
     "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.1",
+    "node-fetch": "^2.7.0",
+    "nodemailer": "^6.9.4",
     "winston": "^3.18.3"
   },
   "devDependencies": {
+    "jest": "^29.5.0",
+    "supertest": "^6.3.3",
     "kill-port": "^2.0.1",
     "nodemon": "^3.0.1"
   },
@@ -33,5 +41,28 @@
     "scouts"
   ],
   "author": "Tu nombre",
-  "license": "MIT"
+  "license": "MIT",
+  "jest": {
+    "testEnvironment": "node",
+    "setupFilesAfterEnv": [
+      "<rootDir>/tests/setup.js"
+    ],
+    "testMatch": [
+      "<rootDir>/tests/**/*.test.js"
+    ],
+    "moduleNameMapping": {
+      "^(\\.{1,2}/.*)\\.js$": "$1"
+    },
+    "collectCoverageFrom": [
+      "src/**/*.js",
+      "!src/server.js",
+      "!src/init-db.js"
+    ],
+    "coverageDirectory": "coverage",
+    "coverageReporters": [
+      "text",
+      "lcov",
+      "html"
+    ]
+  }
 }

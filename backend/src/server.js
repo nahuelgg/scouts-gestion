@@ -28,6 +28,8 @@ const CONFIG = {
   FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:3000',
   BACKEND_URL: process.env.BACKEND_URL || 'http://localhost:3001',
   CORS_ORIGINS: process.env.ALLOWED_ORIGINS?.split(',') || [
+    'http://localhost',
+    'http://localhost:80',
     'http://localhost:3000',
     'http://localhost:3001',
   ],
@@ -138,13 +140,11 @@ app.use('/api/ramas', ramaRoutes)
 app.use('/api/usuarios', usuarioRoutes)
 app.use('/api/roles', require('./routes/roles'))
 
-// Ruta de prueba
-app.get('/api/health', (req, res) => {
-  res.json({
-    message: 'Sistema de gestión Scouts API funcionando',
-    timestamp: new Date().toISOString(),
-  })
-})
+// Health checks avanzados (sin rate limiting para load balancers)
+app.use('/api/health', require('./routes/health'))
+
+// Monitoreo y alertas (requiere autenticación)
+app.use('/api/monitoring', require('./routes/monitoring'))
 
 // Middleware de manejo de errores
 app.use((err, req, res, next) => {
@@ -173,4 +173,10 @@ app.listen(PORT, () => {
   logger.server(`Servidor ejecutándose en puerto ${PORT}`)
   logger.info(`Entorno: ${process.env.NODE_ENV}`)
   logger.info(`Frontend URL: ${CONFIG.FRONTEND_URL}`)
+
+  // Iniciar servicio de monitoreo después de que el servidor esté listo
+  setTimeout(() => {
+    const monitoringService = require('./services/monitoring/MonitoringService')
+    monitoringService.start()
+  }, 2000) // Esperar 2 segundos para que todo esté inicializado
 })
