@@ -27,4 +27,9 @@ export const usuariosAPI = {
     const response = await api.delete(`/usuarios/${id}`)
     return response.data
   },
+
+  restore: async (id: string) => {
+    const response = await api.patch(`/usuarios/${id}/restore`)
+    return response.data
+  },
 }

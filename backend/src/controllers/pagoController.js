@@ -1,47 +1,8 @@
 const Pago = require('../models/Pago')
 const Persona = require('../models/Persona')
-const multer = require('multer')
+const logger = require('../utils/logger')
 const path = require('path')
 const fs = require('fs')
-
-// Configuración de multer para subida de archivos
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const year = new Date().getFullYear()
-    const uploadPath = path.join(
-      process.env.UPLOAD_PATH || './uploads',
-      year.toString()
-    )
-
-    // Crear directorio si no existe
-    if (!fs.existsSync(uploadPath)) {
-      fs.mkdirSync(uploadPath, { recursive: true })
-    }
-
-    cb(null, uploadPath)
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9)
-    cb(null, 'comprobante-' + uniqueSuffix + path.extname(file.originalname))
-  },
-})
-
-const fileFilter = (req, file, cb) => {
-  // Permitir solo imágenes
-  if (file.mimetype.startsWith('image/')) {
-    cb(null, true)
-  } else {
-    cb(new Error('Solo se permiten archivos de imagen'), false)
-  }
-}
-
-const upload = multer({
-  storage: storage,
-  limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB máximo
-  },
-  fileFilter: fileFilter,
-})
 
 // @desc    Obtener todos los pagos
 // @route   GET /api/pagos
@@ -54,12 +15,20 @@ const getPagos = async (req, res) => {
       socio = '',
       mes = '',
       metodoPago = '',
+      tipoPago = '',
       desde = '',
       hasta = '',
+      includeDeleted = true,
     } = req.query
 
     // Construir filtros
-    const filter = {}
+    let filter = {}
+
+    // Por defecto mostrar todos (incluidos eliminados)
+    // Solo excluir eliminados si se solicita específicamente
+    if (includeDeleted === 'false') {
+      filter.deleted = { $ne: true }
+    }
 
     if (socio) {
       filter.socio = socio
@@ -80,8 +49,30 @@ const getPagos = async (req, res) => {
     }
 
     const pagos = await Pago.find(filter)
-      .populate('socio', 'nombre apellido dni')
-      .populate('registradoPor', 'username')
+      .populate({
+        path: 'socio',
+        select: 'nombre apellido dni',
+        populate: {
+          path: 'rama',
+          select: 'nombre',
+        },
+      })
+      .populate({
+        path: 'registradoPor',
+        select: 'username',
+        populate: {
+          path: 'persona',
+          select: 'nombre apellido',
+        },
+      })
+      .populate({
+        path: 'modificadoPor',
+        select: 'username',
+        populate: {
+          path: 'persona',
+          select: 'nombre apellido',
+        },
+      })
       .sort({ fechaPago: -1 })
       .limit(limit * 1)
       .skip((page - 1) * limit)
@@ -106,8 +97,29 @@ const getPagos = async (req, res) => {
 const getPagoById = async (req, res) => {
   try {
     const pago = await Pago.findById(req.params.id)
-      .populate('socio')
-      .populate('registradoPor', 'username')
+      .populate({
+        path: 'socio',
+        populate: {
+          path: 'rama',
+          select: 'nombre',
+        },
+      })
+      .populate({
+        path: 'registradoPor',
+        select: 'username',
+        populate: {
+          path: 'persona',
+          select: 'nombre apellido',
+        },
+      })
+      .populate({
+        path: 'modificadoPor',
+        select: 'username',
+        populate: {
+          path: 'persona',
+          select: 'nombre apellido',
+        },
+      })
 
     if (!pago) {
       return res.status(404).json({ message: 'Pago no encontrado' })
@@ -131,14 +143,27 @@ const createPago = async (req, res) => {
       fechaPago,
       mesCorrespondiente,
       metodoPago,
+      tipoPago,
       observaciones,
     } = req.body
 
     // Validar campos requeridos
-    if (!socio || !monto || !mesCorrespondiente || !metodoPago) {
+    if (!socio || !monto || !mesCorrespondiente || !metodoPago || !tipoPago) {
       return res.status(400).json({
         message:
           'Socio, monto, mes correspondiente y método de pago son requeridos',
+      })
+    }
+
+    // Validar que el monto sea un número válido
+    const montoNumerico = parseFloat(monto)
+    if (
+      isNaN(montoNumerico) ||
+      montoNumerico <= 0 ||
+      !Number.isFinite(montoNumerico)
+    ) {
+      return res.status(400).json({
+        message: 'El monto debe ser un número válido mayor a 0',
       })
     }
 
@@ -148,21 +173,14 @@ const createPago = async (req, res) => {
       return res.status(400).json({ message: 'Socio no encontrado' })
     }
 
-    // Verificar si ya existe un pago para este socio en este mes
-    const pagoExistente = await Pago.findOne({ socio, mesCorrespondiente })
-    if (pagoExistente) {
-      return res.status(400).json({
-        message: 'Ya existe un pago registrado para este socio en este mes',
-      })
-    }
-
     // Crear objeto de pago
     const pagoData = {
       socio,
-      monto: parseFloat(monto),
+      monto: montoNumerico,
       fechaPago: fechaPago || new Date(),
       mesCorrespondiente,
       metodoPago,
+      tipoPago,
       observaciones,
       registradoPor: req.user._id,
     }
@@ -170,19 +188,64 @@ const createPago = async (req, res) => {
     // Si hay archivo de comprobante
     if (req.file) {
       const year = new Date().getFullYear()
-      pagoData.comprobante = {
+
+      // Información básica del archivo
+      const comprobanteData = {
         filename: req.file.filename,
         originalName: req.file.originalname,
         path: `${year}/${req.file.filename}`,
         size: req.file.size,
         mimetype: req.file.mimetype,
       }
+
+      // Agregar información de validación avanzada si está disponible
+      if (req.fileValidation) {
+        comprobanteData.validation = {
+          riskLevel: req.fileValidation.riskLevel,
+          riskScore: req.fileValidation.riskScore,
+          fileHash: req.fileValidation.fileHash,
+          processingTime: req.fileValidation.processingTime,
+          detectedType: req.fileValidation.metadata?.detectedType,
+          validationDate: new Date().toISOString(),
+        }
+
+        // Si hubo warnings, registrarlos
+        if (
+          req.fileValidation.warnings &&
+          req.fileValidation.warnings.length > 0
+        ) {
+          comprobanteData.validation.warnings = req.fileValidation.warnings
+        }
+
+        // Marcar para revisión si es riesgo medio (ya que los de alto van a cuarentena)
+        if (req.fileValidation.riskLevel === 'MEDIUM') {
+          comprobanteData.needsReview = true
+          comprobanteData.reviewReason =
+            'Archivo con riesgo medio requiere revisión'
+        }
+      }
+
+      pagoData.comprobante = comprobanteData
     }
 
     const pago = await Pago.create(pagoData)
     const pagoCreado = await Pago.findById(pago._id)
-      .populate('socio', 'nombre apellido dni')
-      .populate('registradoPor', 'username')
+      .populate({
+        path: 'socio',
+        select: 'nombre apellido dni',
+        populate: {
+          path: 'rama',
+          select: 'nombre',
+        },
+      })
+      .populate({
+        path: 'registradoPor',
+        select: 'username',
+        populate: {
+          path: 'persona',
+          select: 'nombre apellido',
+        },
+      })
 
     res.status(201).json({
       message: 'Pago registrado exitosamente',
@@ -199,7 +262,8 @@ const createPago = async (req, res) => {
 // @access  Private (jefe de rama, administrador)
 const updatePago = async (req, res) => {
   try {
-    const { monto, fechaPago, metodoPago, observaciones, estado } = req.body
+    const { monto, fechaPago, metodoPago, tipoPago, observaciones, estado } =
+      req.body
 
     const pago = await Pago.findById(req.params.id)
 
@@ -208,11 +272,27 @@ const updatePago = async (req, res) => {
     }
 
     // Actualizar campos
-    if (monto) pago.monto = parseFloat(monto)
+    if (monto) {
+      const montoNumerico = parseFloat(monto)
+      if (
+        isNaN(montoNumerico) ||
+        montoNumerico <= 0 ||
+        !Number.isFinite(montoNumerico)
+      ) {
+        return res.status(400).json({
+          message: 'El monto debe ser un número válido mayor a 0',
+        })
+      }
+      pago.monto = montoNumerico
+    }
     if (fechaPago) pago.fechaPago = fechaPago
     if (metodoPago) pago.metodoPago = metodoPago
+    if (tipoPago) pago.tipoPago = tipoPago
     if (observaciones !== undefined) pago.observaciones = observaciones
     if (estado) pago.estado = estado
+
+    // Registrar quién modificó el pago
+    pago.modificadoPor = req.user._id
 
     // Si hay nuevo archivo de comprobante
     if (req.file) {
@@ -228,20 +308,73 @@ const updatePago = async (req, res) => {
       }
 
       const year = new Date().getFullYear()
-      pago.comprobante = {
+
+      // Información básica del archivo
+      const comprobanteData = {
         filename: req.file.filename,
         originalName: req.file.originalname,
         path: `${year}/${req.file.filename}`,
         size: req.file.size,
         mimetype: req.file.mimetype,
       }
+
+      // Agregar información de validación avanzada si está disponible
+      if (req.fileValidation) {
+        comprobanteData.validation = {
+          riskLevel: req.fileValidation.riskLevel,
+          riskScore: req.fileValidation.riskScore,
+          fileHash: req.fileValidation.fileHash,
+          processingTime: req.fileValidation.processingTime,
+          detectedType: req.fileValidation.metadata?.detectedType,
+          validationDate: new Date().toISOString(),
+        }
+
+        // Si hubo warnings, registrarlos
+        if (
+          req.fileValidation.warnings &&
+          req.fileValidation.warnings.length > 0
+        ) {
+          comprobanteData.validation.warnings = req.fileValidation.warnings
+        }
+
+        // Marcar para revisión si es riesgo medio
+        if (req.fileValidation.riskLevel === 'MEDIUM') {
+          comprobanteData.needsReview = true
+          comprobanteData.reviewReason =
+            'Archivo con riesgo medio requiere revisión'
+        }
+      }
+
+      pago.comprobante = comprobanteData
     }
 
     await pago.save()
 
     const pagoActualizado = await Pago.findById(pago._id)
-      .populate('socio', 'nombre apellido dni')
-      .populate('registradoPor', 'username')
+      .populate({
+        path: 'socio',
+        select: 'nombre apellido dni',
+        populate: {
+          path: 'rama',
+          select: 'nombre',
+        },
+      })
+      .populate({
+        path: 'registradoPor',
+        select: 'username',
+        populate: {
+          path: 'persona',
+          select: 'nombre apellido',
+        },
+      })
+      .populate({
+        path: 'modificadoPor',
+        select: 'username',
+        populate: {
+          path: 'persona',
+          select: 'nombre apellido',
+        },
+      })
 
     res.json({
       message: 'Pago actualizado exitosamente',
@@ -264,20 +397,64 @@ const deletePago = async (req, res) => {
       return res.status(404).json({ message: 'Pago no encontrado' })
     }
 
-    // Eliminar archivo de comprobante si existe
-    if (pago.comprobante && pago.comprobante.path) {
-      const filePath = path.join(
-        process.env.UPLOAD_PATH || './uploads',
-        pago.comprobante.path
-      )
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath)
-      }
+    if (pago.deleted) {
+      return res.status(400).json({ message: 'El pago ya está eliminado' })
     }
 
-    await Pago.findByIdAndDelete(req.params.id)
+    // Eliminación lógica - NO eliminar archivo de comprobante
+    pago.deleted = true
+    pago.deletedAt = new Date()
+    pago.deletedBy = req.user._id
 
-    res.json({ message: 'Pago eliminado exitosamente' })
+    await pago.save()
+
+    // Obtener el pago actualizado con datos poblados
+    const pagoEliminado = await Pago.findById(req.params.id)
+      .populate('socio', 'nombre apellido dni rama')
+      .populate('registradoPor', 'username')
+      .populate('deletedBy', 'username')
+
+    res.json({
+      message: 'Pago eliminado exitosamente',
+      pago: pagoEliminado,
+    })
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ message: 'Error del servidor' })
+  }
+}
+
+// @desc    Restaurar pago eliminado
+// @route   PATCH /api/pagos/:id/restore
+// @access  Private (administrador)
+const restorePago = async (req, res) => {
+  try {
+    const pago = await Pago.findById(req.params.id)
+
+    if (!pago) {
+      return res.status(404).json({ message: 'Pago no encontrado' })
+    }
+
+    if (!pago.deleted) {
+      return res.status(400).json({ message: 'El pago no está eliminado' })
+    }
+
+    // Restaurar el pago
+    pago.deleted = false
+    pago.deletedAt = undefined
+    pago.deletedBy = undefined
+
+    await pago.save()
+
+    // Obtener el pago restaurado con datos poblados
+    const pagoRestaurado = await Pago.findById(req.params.id)
+      .populate('socio', 'nombre apellido dni rama')
+      .populate('registradoPor', 'username')
+
+    res.json({
+      message: 'Pago restaurado exitosamente',
+      pago: pagoRestaurado,
+    })
   } catch (error) {
     console.error(error)
     res.status(500).json({ message: 'Error del servidor' })
@@ -304,6 +481,7 @@ const getResumenPagosSocio = async (req, res) => {
       socio: socioId,
       año,
       mesesPagados,
+      tipoPago,
       totalPagos: pagos.length,
       totalPagado,
       pagos,
@@ -320,6 +498,6 @@ module.exports = {
   createPago,
   updatePago,
   deletePago,
+  restorePago,
   getResumenPagosSocio,
-  upload,
 }

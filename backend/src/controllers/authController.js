@@ -2,11 +2,12 @@ const jwt = require('jsonwebtoken')
 const Usuario = require('../models/Usuario')
 const Persona = require('../models/Persona')
 const Rol = require('../models/Rol')
+const logger = require('../utils/logger')
 
 // Generar JWT
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: '30d',
+    expiresIn: process.env.JWT_EXPIRES_IN || '30d',
   })
 }
 
@@ -28,7 +29,7 @@ const login = async (req, res) => {
     const usuario = await Usuario.findOne({ username })
       .populate({
         path: 'persona',
-        populate: { path: 'rama' }
+        populate: { path: 'rama' },
       })
       .populate('rol')
 
@@ -47,6 +48,12 @@ const login = async (req, res) => {
       usuario.ultimoLogin = new Date()
       await usuario.save()
 
+      logger.auth(`Login exitoso: ${username}`, {
+        userId: usuario._id,
+        username,
+        rol: usuario.rol.nombre,
+      })
+
       res.json({
         _id: usuario._id,
         username: usuario.username,
@@ -55,10 +62,19 @@ const login = async (req, res) => {
         token: generateToken(usuario._id),
       })
     } else {
+      logger.security(`Intento de login fallido: ${username}`, {
+        username,
+        ip: req.ip,
+      })
       res.status(401).json({ message: 'Credenciales inválidas' })
     }
   } catch (error) {
-    console.error(error)
+    logger.error('Error en login:', {
+      error: error.message,
+      stack: error.stack,
+      username: req.body.username,
+      ip: req.ip,
+    })
     res.status(500).json({ message: 'Error del servidor' })
   }
 }
@@ -71,7 +87,7 @@ const getProfile = async (req, res) => {
     const usuario = await Usuario.findById(req.user._id)
       .populate({
         path: 'persona',
-        populate: { path: 'rama' }
+        populate: { path: 'rama' },
       })
       .populate('rol')
       .select('-password')
@@ -97,11 +113,9 @@ const changePassword = async (req, res) => {
     }
 
     if (newPassword.length < 6) {
-      return res
-        .status(400)
-        .json({
-          message: 'La nueva contraseña debe tener al menos 6 caracteres',
-        })
+      return res.status(400).json({
+        message: 'La nueva contraseña debe tener al menos 6 caracteres',
+      })
     }
 
     const usuario = await Usuario.findById(req.user._id)

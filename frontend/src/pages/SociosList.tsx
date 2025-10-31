@@ -1,373 +1,192 @@
-import React, { useEffect, useState } from 'react'
-import {
-  Table,
-  Button,
-  Space,
-  Input,
-  Select,
-  Card,
-  Typography,
-  Modal,
-  message,
-  Tag,
-  Tooltip,
-} from 'antd'
-import { ExclamationCircleOutlined } from '@ant-design/icons'
-import {
-  PlusOutlined,
-  EditOutlined,
-  DeleteOutlined,
-  SearchOutlined,
-  EyeOutlined,
-} from '@ant-design/icons'
-import { useNavigate } from 'react-router-dom'
+import React, { useEffect, useMemo } from 'react'
+import { Card, Row, Col, Typography, Space, Button, Statistic, message } from 'antd'
+import { PlusOutlined, UserOutlined } from '@ant-design/icons'
 import { useAppDispatch, useAppSelector } from '../utils/hooks'
-import {
-  fetchPersonas,
-  deletePersona,
-  clearError,
-} from '../store/personasSlice'
-import { ramasAPI } from '../services/api'
-import { Persona, Rama } from '../types'
+import { clearError } from '../store/personasSlice'
+import { Persona } from '../types'
+
+// Hooks customizados
+import { useSociosFilters } from '../hooks/useSociosFilters'
+import { useSociosPermissions } from '../hooks/useSociosPermissions'
+import { useSociosActions } from '../hooks/useSociosActions'
+
+// Componentes especializados
+import { SociosFiltersComponent } from '../components/Socios/SociosFilters'
+import { SociosTable } from '../components/Socios/SociosTable'
+import { DeleteSocioModal, RestoreSocioModal } from '../components/Socios/SociosModals'
+
+// Utils
+import { isPersonaMayor } from '../utils/socios/display'
 
 const { Title } = Typography
-const { Search } = Input
-const { Option } = Select
 
 const SociosList: React.FC = () => {
-  const navigate = useNavigate()
   const dispatch = useAppDispatch()
-  const { personas, isLoading, error, currentPage, total } = useAppSelector(
-    (state) => state.personas
-  )
+
+  // Redux state
+  const { personas, isLoading, error } = useAppSelector((state) => state.personas)
   const { user } = useAppSelector((state) => state.auth)
 
-  const [searchText, setSearchText] = useState('')
-  const [selectedRama, setSelectedRama] = useState<string>('')
-  const [ramas, setRamas] = useState<Rama[]>([])
-  const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(10)
-  const [deleteModalVisible, setDeleteModalVisible] = useState(false)
-  const [personaToDelete, setPersonaToDelete] = useState<Persona | null>(null)
+  // Hooks customizados
+  const { filters, filteredPersonas, updateFilters, clearFilters, hasFullAccess } = useSociosFilters(personas, user)
+  const permissions = useSociosPermissions(user)
+  const actions = useSociosActions()
 
-  const canManage = ['administrador', 'jefe de grupo', 'jefe de rama'].includes(
-    user?.rol?.nombre || ''
-  )
-  const canDelete = ['administrador', 'jefe de grupo'].includes(
-    user?.rol?.nombre || ''
-  )
+  // Estadísticas calculadas
+  const statistics = useMemo(() => {
+    const sociosActivos = filteredPersonas.filter(persona => !persona.deleted && persona.activo)
+    const sociosInactivos = filteredPersonas.filter(persona => !persona.deleted && !persona.activo)
+    const mayoresDeEdad = filteredPersonas.filter(persona => !persona.deleted && isPersonaMayor(persona))
+    const educadores = filteredPersonas.filter(persona => !persona.deleted && persona.funcion === 'educador')
 
-  // Función para verificar si puede gestionar una persona específica
-  const canManagePersona = (persona: Persona) => {
-    // Administrador y Jefe de Grupo pueden gestionar cualquier persona
-    if (['administrador', 'jefe de grupo'].includes(user?.rol?.nombre || '')) {
-      return true
+    return {
+      totalSocios: sociosActivos.length,
+      sociosInactivos: sociosInactivos.length,
+      mayoresDeEdad: mayoresDeEdad.length,
+      educadores: educadores.length,
     }
+  }, [filteredPersonas])
 
-    // Jefe de Rama solo puede gestionar personas de su rama asignada
-    if (user?.rol?.nombre === 'jefe de rama') {
-      // Si el jefe de rama no tiene persona asignada con rama, no puede gestionar nada
-      if (!user.persona?.rama) {
-        return false
-      }
-
-      // Si la persona no tiene rama asignada, no puede ser gestionada por jefe de rama
-      if (!persona.rama) {
-        return false
-      }
-
-      // Verificar que la rama de la persona coincida con la rama del jefe
-      return persona.rama._id === user.persona.rama._id
-    }
-
-    return false
-  }
-
+  // Efectos
   useEffect(() => {
-    loadRamas()
+    actions.loadRamas()
+    actions.loadPersonas()
   }, [])
-
-  useEffect(() => {
-    loadPersonas()
-  }, [searchText, selectedRama, page, pageSize]) // Removido dispatch
 
   useEffect(() => {
     if (error) {
       message.error(error)
       dispatch(clearError())
     }
-  }, [error]) // Removido dispatch
+  }, [error, dispatch])
 
-  const loadRamas = async () => {
-    try {
-      const response = await ramasAPI.getAll()
-      setRamas(response)
-    } catch (error) {
-      console.error('Error cargando ramas:', error)
-    }
-  }
-
-  const loadPersonas = React.useCallback(() => {
-    const params: any = {
-      page,
-      limit: pageSize,
-    }
-
-    const userRole = user?.rol?.nombre
-    const fullAccessRoles = ['administrador', 'jefe de grupo', 'jefe de rama']
-
-    // Para usuarios con acceso restringido, filtrar automáticamente por su DNI
-    if (!userRole || !fullAccessRoles.includes(userRole)) {
-      if (user?.persona?.dni) {
-        params.dni = user.persona.dni
-      }
-    } else {
-      // Para roles con acceso completo, aplicar filtros normales
-      if (searchText) {
-        params.search = searchText
-      }
-
-      if (selectedRama) {
-        params.rama = selectedRama
-      }
-    }
-
-    dispatch(fetchPersonas(params))
-  }, [
-    page,
-    pageSize,
-    searchText,
-    selectedRama,
-    user?.rol?.nombre,
-    user?.persona?.dni,
-  ])
-
+  // Funciones con validación de permisos
   const handleDelete = (persona: Persona) => {
-    setPersonaToDelete(persona)
-    setDeleteModalVisible(true)
-  }
-
-  const confirmDelete = () => {
-    if (personaToDelete) {
-      dispatch(deletePersona(personaToDelete._id))
-      setDeleteModalVisible(false)
-      setPersonaToDelete(null)
+    if (!permissions.canDeletePersona(persona)) {
+      message.error('No tienes permisos para eliminar este socio')
+      return
     }
+    actions.handleDelete(persona)
   }
 
-  const cancelDelete = () => {
-    setDeleteModalVisible(false)
-    setPersonaToDelete(null)
+  const handleRestore = (persona: Persona) => {
+    if (!permissions.canDeletePersona(persona)) {
+      message.error('No tienes permisos para restaurar este socio')
+      return
+    }
+    actions.handleRestore(persona)
   }
 
-  const columns = [
-    {
-      title: 'DNI',
-      dataIndex: 'dni',
-      key: 'dni',
-      width: 120,
-    },
-    {
-      title: 'Apellido',
-      dataIndex: 'apellido',
-      key: 'apellido',
-      sorter: true,
-    },
-    {
-      title: 'Nombre',
-      dataIndex: 'nombre',
-      key: 'nombre',
-      sorter: true,
-    },
-
-    {
-      title: 'Teléfono',
-      dataIndex: 'telefono',
-      key: 'telefono',
-      width: 130,
-    },
-    {
-      title: 'Rama',
-      dataIndex: ['rama', 'nombre'],
-      key: 'rama',
-      width: 120,
-      render: (rama: string) => {
-        if (!rama) return '-'
-        const colors: { [key: string]: string } = {
-          manada: 'brown',
-          unidad: 'green',
-          caminantes: 'yellow',
-          rovers: 'purple',
-        }
-        return <Tag color={colors[rama] || 'default'}>{rama.toUpperCase()}</Tag>
-      },
-    },
-    {
-      title: 'Estado',
-      dataIndex: 'activo',
-      key: 'activo',
-      width: 100,
-      render: (activo: boolean) => (
-        <Tag color={activo ? 'success' : 'default'}>
-          {activo ? 'Activo' : 'Inactivo'}
-        </Tag>
-      ),
-    },
-    {
-      title: 'Acciones',
-      key: 'actions',
-
-      width: 150,
-      render: (_: any, record: Persona) => (
-        <Space size="small">
-          {canManagePersona(record) && (
-            <Tooltip title="Ver detalles">
-              <Button
-                type="text"
-                icon={<EyeOutlined />}
-                onClick={() => navigate(`/socios/${record._id}`)}
-              />
-            </Tooltip>
-          )}
-          {canManagePersona(record) && (
-            <Tooltip title="Editar">
-              <Button
-                type="text"
-                icon={<EditOutlined />}
-                onClick={() => navigate(`/socios/editar/${record._id}`)}
-              />
-            </Tooltip>
-          )}
-          {canDelete && canManagePersona(record) && (
-            <Tooltip title="Eliminar">
-              <Button
-                type="text"
-                danger
-                icon={<DeleteOutlined />}
-                onClick={() => handleDelete(record)}
-              />
-            </Tooltip>
-          )}
-        </Space>
-      ),
-    },
-  ]
+  const handleEdit = (persona: Persona) => {
+    if (!permissions.canEditPersona(persona)) {
+      message.error('No tienes permisos para editar este socio')
+      return
+    }
+    actions.handleEdit(persona)
+  }
 
   return (
     <div>
-      <div
-        style={{
-          marginBottom: 16,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}
-      >
-        <Title level={2}>Gestión de Socios</Title>
-        {canManage && (
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => navigate('/socios/nuevo')}
-          >
-            Nuevo Socio
-          </Button>
-        )}
-      </div>
-
-      <Card>
-        {/* Filtros - Solo visible para roles con acceso completo */}
-        {(() => {
-          const userRole = user?.rol?.nombre
-          const fullAccessRoles = [
-            'administrador',
-            'jefe de grupo',
-            'jefe de rama',
-          ]
-          return userRole && fullAccessRoles.includes(userRole)
-        })() && (
-          <div style={{ marginBottom: 16 }}>
-            <Space wrap>
-              <Search
-                placeholder="Buscar por nombre o DNI"
-                allowClear
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                onSearch={loadPersonas}
-                style={{ width: 300 }}
-                enterButton={<SearchOutlined />}
-              />
-
-              <Select
-                placeholder="Filtrar por rama"
-                style={{ width: 150 }}
-                allowClear
-                value={selectedRama}
-                onChange={setSelectedRama}
+      {/* Header */}
+      <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
+        <Col>
+          <Title level={2} style={{ margin: 0 }}>
+            Gestión de Socios
+          </Title>
+        </Col>
+        <Col>
+          <Space>
+            {permissions.canCreateNew && (
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={actions.handleCreateNew}
               >
-                <Option key="todas" value="">
-                  Todas las ramas
-                </Option>
-                {ramas.map((rama) => (
-                  <Option key={rama._id} value={rama._id}>
-                    {rama.nombre.charAt(0).toUpperCase() + rama.nombre.slice(1)}
-                  </Option>
-                ))}
-              </Select>
-            </Space>
-          </div>
-        )}
+                Nuevo Socio
+              </Button>
+            )}
+          </Space>
+        </Col>
+      </Row>
+
+      {/* Card con filtros y tabla */}
+      <Card loading={actions.ramasLoading}>
+        {/* Filtros */}
+        <SociosFiltersComponent
+          filters={filters}
+          onFiltersChange={updateFilters}
+          onClearFilters={clearFilters}
+          ramas={actions.ramas}
+          hasFullAccess={hasFullAccess}
+        />
 
         {/* Tabla */}
-        <Table
-          columns={columns}
-          dataSource={personas}
-          rowKey="_id"
+        <SociosTable
+          personas={filteredPersonas}
           loading={isLoading}
-          pagination={{
-            current: currentPage,
-            pageSize: pageSize,
-            total: total,
-            showSizeChanger: true,
-            showQuickJumper: true,
-            showTotal: (total, range) =>
-              `${range[0]}-${range[1]} de ${total} socios`,
-            onChange: (page, size) => {
-              setPage(page)
-              if (size !== pageSize) {
-                setPageSize(size)
-              }
-            },
-          }}
-          scroll={{ x: 800 }}
+          canDeletePersona={permissions.canDeletePersona}
+          canEditPersona={permissions.canEditPersona}
+          canManagePersona={permissions.canManagePersona}
+          onView={actions.handleView}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onRestore={handleRestore}
         />
       </Card>
 
-      {/* Modal de confirmación para eliminar */}
-      <Modal
-        title="Confirmar eliminación"
-        open={deleteModalVisible}
-        onOk={confirmDelete}
-        onCancel={cancelDelete}
-        okText="Sí, eliminar"
-        cancelText="Cancelar"
-        okType="danger"
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <ExclamationCircleOutlined
-            style={{ color: '#faad14', fontSize: '22px' }}
-          />
-          <div>
-            <p>¿Estás seguro de que deseas eliminar a:</p>
-            <strong>
-              {personaToDelete?.nombre} {personaToDelete?.apellido}
-            </strong>
-            <p style={{ marginTop: '8px', color: '#666' }}>
-              Esta acción no se puede deshacer.
-            </p>
-          </div>
-        </div>
-      </Modal>
+      {/* Estadísticas */}
+      {hasFullAccess && (
+        <Card title="Estadísticas" style={{ marginTop: 24 }}>
+          <Row gutter={16}>
+            <Col xs={24} sm={6}>
+              <Statistic
+                title="Socios Activos"
+                value={statistics.totalSocios}
+                prefix={<UserOutlined />}
+                valueStyle={{ color: '#3f8600' }}
+              />
+            </Col>
+            <Col xs={24} sm={6}>
+              <Statistic
+                title="Socios Inactivos"
+                value={statistics.sociosInactivos}
+                valueStyle={{ color: '#cf1322' }}
+              />
+            </Col>
+            <Col xs={24} sm={6}>
+              <Statistic
+                title="Mayores de Edad"
+                value={statistics.mayoresDeEdad}
+                valueStyle={{ color: '#1890ff' }}
+              />
+            </Col>
+            <Col xs={24} sm={6}>
+              <Statistic
+                title="Educadores"
+                value={statistics.educadores}
+                valueStyle={{ color: '#722ed1' }}
+              />
+            </Col>
+          </Row>
+        </Card>
+      )}
+
+      {/* Modales */}
+      <DeleteSocioModal
+        visible={actions.deleteModalVisible}
+        persona={actions.personaToDelete}
+        onConfirm={actions.handleConfirmDelete}
+        onCancel={actions.handleCancelDelete}
+        loading={actions.actionLoading}
+      />
+
+      <RestoreSocioModal
+        visible={actions.restoreModalVisible}
+        persona={actions.personaToRestore}
+        onConfirm={actions.handleConfirmRestore}
+        onCancel={actions.handleCancelRestore}
+        loading={actions.actionLoading}
+      />
     </div>
   )
 }

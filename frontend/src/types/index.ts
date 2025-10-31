@@ -6,6 +6,9 @@ export interface User {
   activo: boolean
   ultimoLogin?: Date
   token?: string
+  deleted?: boolean
+  deletedAt?: Date
+  deletedBy?: User
 }
 
 export interface Persona {
@@ -25,6 +28,9 @@ export interface Persona {
   rama?: Rama
   funcion: 'ayudante' | 'beneficiario' | 'educador'
   activo: boolean
+  deleted?: boolean
+  deletedAt?: Date
+  deletedBy?: string
   createdAt: Date
   updatedAt: Date
 }
@@ -60,6 +66,7 @@ export interface Pago {
     | 'transferencia'
     | 'tarjeta_debito'
     | 'tarjeta_credito'
+  tipoPago: 'mensual' | 'afiliacion' | 'campamento' | 'otro'
   comprobante?: {
     filename: string
     originalName: string
@@ -69,7 +76,11 @@ export interface Pago {
   }
   observaciones?: string
   registradoPor: User
+  modificadoPor?: User
   estado: 'pendiente' | 'confirmado' | 'rechazado'
+  deleted?: boolean
+  deletedAt?: Date
+  deletedBy?: User
   createdAt: Date
   updatedAt: Date
 }
@@ -77,6 +88,12 @@ export interface Pago {
 export interface LoginCredentials {
   username: string
   password: string
+}
+
+export interface ChangePasswordData {
+  currentPassword: string
+  newPassword: string
+  confirmPassword: string
 }
 
 export interface ApiResponse<T> {
@@ -119,6 +136,7 @@ export interface PagoFormData {
     | 'transferencia'
     | 'tarjeta_debito'
     | 'tarjeta_credito'
+  tipoPago: 'mensual' | 'afiliacion' | 'campamento' | 'otro'
   observaciones?: string
   comprobante?: File
 }
@@ -129,6 +147,8 @@ export interface FetchPersonasParams {
   limit?: number
   rama?: string
   search?: string
+  includeDeleted?: boolean
+  withoutUser?: boolean
 }
 
 export interface FetchPagosParams {
@@ -137,6 +157,7 @@ export interface FetchPagosParams {
   socio?: string
   año?: number
   mes?: string
+  includeDeleted?: boolean
 }
 
 // Interfaces para formularios adicionales
@@ -164,6 +185,7 @@ export interface FetchUsuariosParams {
   rol?: string
   activo?: boolean
   search?: string
+  includeDeleted?: boolean
 }
 
 // Tipos para respuestas específicas de usuarios
@@ -189,4 +211,130 @@ export interface ApiError {
     status?: number
   }
   message?: string
+}
+
+// =============================================================================
+// INTERFACES PARA ELIMINAR TIPOS 'any'
+// =============================================================================
+
+// Interfaces para componentes de tabla (Ant Design)
+export interface TableColumnRenderProps<T = unknown> {
+  text: unknown
+  record: T
+  index: number
+}
+
+// Interfaces para Upload de Ant Design
+export interface UploadFile {
+  uid: string
+  name: string
+  status?: 'uploading' | 'done' | 'error' | 'removed'
+  response?: unknown
+  url?: string
+  preview?: string
+  originFileObj?: File
+  error?: unknown
+}
+
+export interface UploadChangeParam {
+  file: UploadFile
+  fileList: UploadFile[]
+}
+
+// Interfaces específicas para configuración de API
+export interface AxiosRequestConfig {
+  url?: string
+  method?: string
+  headers?: Record<string, string>
+  data?: unknown
+  params?: Record<string, unknown>
+  timeout?: number
+  responseType?: string
+}
+
+// Interfaces para parámetros de filtros
+export interface PersonaFilterParams {
+  page?: number
+  limit?: number
+  rama?: string
+  search?: string
+  includeDeleted?: boolean
+  withoutUser?: boolean
+  dni?: string
+}
+
+export interface PagoFilterParams {
+  page?: number
+  limit?: number
+  socio?: string
+  año?: number
+  mes?: string
+  includeDeleted?: boolean
+  tipoPago?: string
+  metodoPago?: string
+}
+
+// Interface para datos de formulario SocioForm
+export interface SocioFormValues {
+  nombre: string
+  apellido: string
+  dni: string
+  calle: string
+  numero: string
+  ciudad: string
+  codigoPostal?: string
+  telefono: string
+  email?: string
+  fechaNacimiento?: { toDate(): Date } // Para Ant Design DatePicker
+  rama?: string
+  funcion: 'ayudante' | 'beneficiario' | 'educador'
+}
+
+// Interface para datos de formulario PagoForm
+export interface PagoFormValues {
+  socio: string
+  monto: number | string
+  fechaPago: { toISOString(): string } // Para Ant Design DatePicker
+  mesCorrespondiente: string
+  metodoPago:
+    | 'efectivo'
+    | 'transferencia'
+    | 'tarjeta_debito'
+    | 'tarjeta_credito'
+  tipoPago: 'mensual' | 'afiliacion' | 'campamento' | 'otro'
+  observaciones?: string
+  estado?: string
+  comprobante?: unknown
+}
+
+// Interface para datos de formulario UsuarioForm
+export interface UsuarioFormValues {
+  username: string
+  password: string
+  confirmPassword?: string
+  persona: string
+  rol: string
+  activo?: boolean
+}
+
+// Interfaces para parámetros de filtros específicos
+export interface PersonaFilterParams {
+  page?: number
+  limit?: number
+  rama?: string
+  search?: string
+  includeDeleted?: boolean
+  withoutUser?: boolean
+  dni?: string
+  estado?: string
+  es_mayor?: boolean
+  activo?: boolean
+}
+
+// Funciones para validación de pagos (sin any)
+export interface PagoValidationContext {
+  user: User
+  userRole: string
+  userRamaId?: string
+  isAdminOrJefeGrupo: boolean
 }

@@ -1,15 +1,51 @@
 const Persona = require('../models/Persona')
 const Rama = require('../models/Rama')
+const {
+  validateUniqueDNI,
+  validateRamaExists,
+  validateRequiredPersonaFields,
+} = require('../validators/personaBusinessValidators')
+const {
+  handleServerError,
+  handleValidationError,
+  handleNotFound,
+  sendSuccessResponse,
+} = require('../utils/errorHandlers')
 
 // @desc    Obtener todas las personas
 // @route   GET /api/personas
 // @access  Private
 const getPersonas = async (req, res) => {
   try {
-    const { page = 1, limit = 10, search = '', rama = '', dni = '' } = req.query
+    const {
+      page = 1,
+      limit = 10,
+      search = '',
+      rama = '',
+      dni = '',
+      includeDeleted = true,
+      withoutUser = false,
+    } = req.query
 
-    // Construir filtros - excluir personas eliminadas
-    const filter = { deleted: false }
+    // Construir filtros
+    let filter = {}
+
+    // Por defecto mostrar todas (incluidas eliminadas)
+    // Solo excluir eliminadas si se solicita específicamente
+    if (includeDeleted === 'false') {
+      filter.deleted = false
+    }
+
+    // Filtro para excluir personas que ya tienen usuario
+    if (withoutUser === 'true') {
+      const Usuario = require('../models/Usuario')
+      const personasConUsuario = await Usuario.find(
+        { deleted: { $ne: true } },
+        'persona'
+      ).distinct('persona')
+
+      filter._id = { $nin: personasConUsuario }
+    }
 
     // Filtro por DNI exacto (para usuarios tipo 'socio')
     if (dni) {
@@ -58,13 +94,12 @@ const getPersonaById = async (req, res) => {
     }).populate('rama')
 
     if (!persona) {
-      return res.status(404).json({ message: 'Persona no encontrada' })
+      return handleNotFound(res, 'Persona')
     }
 
     res.json(persona)
   } catch (error) {
-    console.error(error)
-    res.status(500).json({ message: 'Error del servidor' })
+    handleServerError(res, error, 'Error obteniendo persona')
   }
 }
 
@@ -86,26 +121,21 @@ const createPersona = async (req, res) => {
     } = req.body
 
     // Validar campos requeridos
-    if (!nombre || !apellido || !dni || !direccion || !telefono) {
-      return res.status(400).json({
-        message: 'Nombre, apellido, DNI, dirección y teléfono son requeridos',
-      })
+    const validation = validateRequiredPersonaFields(req.body)
+    if (!validation.isValid) {
+      return handleValidationError(res, validation.message)
     }
 
     // Verificar si el DNI ya existe
-    const personaExistente = await Persona.findOne({ dni, deleted: false })
-    if (personaExistente) {
-      return res
-        .status(400)
-        .json({ message: 'Ya existe una persona con ese DNI' })
+    const isDNIUnique = await validateUniqueDNI(dni)
+    if (!isDNIUnique) {
+      return handleValidationError(res, 'Ya existe una persona con ese DNI')
     }
 
     // Verificar que la rama existe
-    if (rama) {
-      const ramaExistente = await Rama.findById(rama)
-      if (!ramaExistente) {
-        return res.status(400).json({ message: 'Rama no válida' })
-      }
+    const isRamaValid = await validateRamaExists(rama)
+    if (!isRamaValid) {
+      return handleValidationError(res, 'Rama no válida')
     }
 
     const persona = await Persona.create({
@@ -122,13 +152,14 @@ const createPersona = async (req, res) => {
 
     const personaCreada = await Persona.findById(persona._id).populate('rama')
 
-    res.status(201).json({
-      message: 'Persona creada exitosamente',
-      persona: personaCreada,
-    })
+    sendSuccessResponse(
+      res,
+      { persona: personaCreada },
+      'Persona creada exitosamente',
+      201
+    )
   } catch (error) {
-    console.error(error)
-    res.status(500).json({ message: 'Error del servidor' })
+    handleServerError(res, error, 'Error creando persona')
   }
 }
 
@@ -219,9 +250,55 @@ const deletePersona = async (req, res) => {
 
     // Soft delete - marcar como eliminada
     persona.deleted = true
+    persona.deletedAt = new Date()
     await persona.save()
 
-    res.json({ message: 'Persona eliminada exitosamente' })
+    // Repoblar para enviar respuesta completa
+    await persona.populate({
+      path: 'rama',
+      select: 'nombre color',
+    })
+
+    res.json({
+      message: 'Persona eliminada exitosamente',
+      persona: persona,
+    })
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ message: 'Error del servidor' })
+  }
+}
+
+// @desc    Restaurar persona eliminada
+// @route   PATCH /api/personas/:id/restore
+// @access  Private (administrador)
+const restorePersona = async (req, res) => {
+  try {
+    const persona = await Persona.findOne({
+      _id: req.params.id,
+      deleted: true,
+    })
+
+    if (!persona) {
+      return res
+        .status(404)
+        .json({ message: 'Persona eliminada no encontrada' })
+    }
+
+    // Restaurar persona
+    persona.deleted = false
+    await persona.save()
+
+    // Repoblar para enviar respuesta completa
+    await persona.populate({
+      path: 'rama',
+      select: 'nombre color',
+    })
+
+    res.json({
+      message: 'Persona restaurada exitosamente',
+      persona: persona,
+    })
   } catch (error) {
     console.error(error)
     res.status(500).json({ message: 'Error del servidor' })
@@ -234,4 +311,5 @@ module.exports = {
   createPersona,
   updatePersona,
   deletePersona,
+  restorePersona,
 }

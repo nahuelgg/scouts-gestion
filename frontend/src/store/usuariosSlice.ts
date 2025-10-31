@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
-import { User, UsuarioFormData, ApiError } from '../types'
+import { User, UsuarioFormData, ApiError, FetchUsuariosParams } from '../types'
 import { usuariosAPI } from '../services/api'
 
 interface UsuariosState {
@@ -25,9 +25,9 @@ const initialState: UsuariosState = {
 // Async thunks
 export const fetchUsuarios = createAsyncThunk(
   'usuarios/fetchUsuarios',
-  async (_, { rejectWithValue }) => {
+  async (params: FetchUsuariosParams = {}, { rejectWithValue }) => {
     try {
-      const response = await usuariosAPI.getAll()
+      const response = await usuariosAPI.getAll(params)
       return response
     } catch (error: unknown) {
       const apiError = error as ApiError
@@ -90,12 +90,27 @@ export const deleteUsuario = createAsyncThunk(
   'usuarios/deleteUsuario',
   async (id: string, { rejectWithValue }) => {
     try {
-      await usuariosAPI.delete(id)
-      return id
+      const response = await usuariosAPI.delete(id)
+      return { id, deletedUsuario: response.usuario }
     } catch (error: unknown) {
       const apiError = error as ApiError
       return rejectWithValue(
         apiError.response?.data?.message || 'Error eliminando usuario'
+      )
+    }
+  }
+)
+
+export const restoreUsuario = createAsyncThunk(
+  'usuarios/restoreUsuario',
+  async (id: string, { rejectWithValue }) => {
+    try {
+      const response = await usuariosAPI.restore(id)
+      return response.usuario
+    } catch (error: unknown) {
+      const apiError = error as ApiError
+      return rejectWithValue(
+        apiError.response?.data?.message || 'Error restaurando usuario'
       )
     }
   }
@@ -110,6 +125,10 @@ const usuariosSlice = createSlice({
     },
     clearCurrentUsuario: (state) => {
       state.currentUsuario = null
+    },
+    clearAllUsuarios: (state) => {
+      // Resetear completamente el estado al hacer logout
+      Object.assign(state, initialState)
     },
   },
   extraReducers: (builder) => {
@@ -167,7 +186,9 @@ const usuariosSlice = createSlice({
       .addCase(updateUsuario.fulfilled, (state, action) => {
         state.isLoading = false
         const updatedUsuario = action.payload.usuario || action.payload
-        const index = state.usuarios.findIndex((u) => u._id === updatedUsuario._id)
+        const index = state.usuarios.findIndex(
+          (u) => u._id === updatedUsuario._id
+        )
         if (index !== -1) {
           state.usuarios[index] = updatedUsuario
         }
@@ -186,14 +207,44 @@ const usuariosSlice = createSlice({
       })
       .addCase(deleteUsuario.fulfilled, (state, action) => {
         state.isLoading = false
-        state.usuarios = state.usuarios.filter((u) => u._id !== action.payload)
+        const { deletedUsuario } = action.payload
+        if (deletedUsuario) {
+          const index = state.usuarios.findIndex(
+            (u) => u._id === deletedUsuario._id
+          )
+          if (index !== -1) {
+            state.usuarios[index] = deletedUsuario
+          }
+        }
       })
       .addCase(deleteUsuario.rejected, (state, action) => {
+        state.isLoading = false
+        state.error = action.payload as string
+      })
+
+    // Restore Usuario
+    builder
+      .addCase(restoreUsuario.pending, (state) => {
+        state.isLoading = true
+        state.error = null
+      })
+      .addCase(restoreUsuario.fulfilled, (state, action) => {
+        state.isLoading = false
+        const restoredUsuario = action.payload
+        const index = state.usuarios.findIndex(
+          (u) => u._id === restoredUsuario._id
+        )
+        if (index !== -1) {
+          state.usuarios[index] = restoredUsuario
+        }
+      })
+      .addCase(restoreUsuario.rejected, (state, action) => {
         state.isLoading = false
         state.error = action.payload as string
       })
   },
 })
 
-export const { clearError, clearCurrentUsuario } = usuariosSlice.actions
+export const { clearError, clearCurrentUsuario, clearAllUsuarios } =
+  usuariosSlice.actions
 export default usuariosSlice.reducer

@@ -27,4 +27,9 @@ export const personasAPI = {
     const response = await api.delete(`/personas/${id}`)
     return response.data
   },
+
+  restore: async (id: string) => {
+    const response = await api.patch(`/personas/${id}/restore`)
+    return response.data
+  },
 }

@@ -36,6 +36,11 @@ export const pagosAPI = {
     return response.data
   },
 
+  restore: async (id: string) => {
+    const response = await api.patch(`/pagos/${id}/restore`)
+    return response.data
+  },
+
   getResumenSocio: async (socioId: string, año?: number) => {
     const response = await api.get(`/pagos/resumen/${socioId}`, {
       params: { año },

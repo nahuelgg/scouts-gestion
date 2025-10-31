@@ -1,27 +1,72 @@
-const express = require('express');
-const router = express.Router();
+const express = require('express')
+const router = express.Router()
 const {
   getUsuarios,
   getUsuarioById,
   createUsuario,
   updateUsuario,
-  deleteUsuario
-} = require('../controllers/usuarioController');
-const { protect, requireFullAccess } = require('../middleware/auth');
+  deleteUsuario,
+  restoreUsuario,
+} = require('../controllers/usuarioController')
+const { protect, requireFullAccess } = require('../middleware/auth')
+const { handleValidationErrors } = require('../middleware/validation')
+const {
+  validateCreateUsuario,
+  validateUpdateUsuario,
+  validateUsuarioId,
+  validateUsuarioQuery,
+} = require('../validators/usuarioValidators')
 
-// GET /api/usuarios - Obtener todos los usuarios
-router.get('/', protect, requireFullAccess, getUsuarios);
+router
+  .route('/')
+  .get(
+    protect,
+    requireFullAccess,
+    validateUsuarioQuery,
+    handleValidationErrors,
+    getUsuarios
+  )
+  .post(
+    protect,
+    requireFullAccess,
+    validateCreateUsuario,
+    handleValidationErrors,
+    createUsuario
+  )
 
-// GET /api/usuarios/:id - Obtener usuario por ID
-router.get('/:id', protect, requireFullAccess, getUsuarioById);
+router
+  .route('/:id')
+  .get(
+    protect,
+    requireFullAccess,
+    validateUsuarioId,
+    handleValidationErrors,
+    getUsuarioById
+  )
+  .put(
+    protect,
+    requireFullAccess,
+    validateUsuarioId,
+    validateUpdateUsuario,
+    handleValidationErrors,
+    updateUsuario
+  )
+  .delete(
+    protect,
+    requireFullAccess,
+    validateUsuarioId,
+    handleValidationErrors,
+    deleteUsuario
+  )
 
-// POST /api/usuarios - Crear nuevo usuario
-router.post('/', protect, requireFullAccess, createUsuario);
+router
+  .route('/:id/restore')
+  .patch(
+    protect,
+    requireFullAccess,
+    validateUsuarioId,
+    handleValidationErrors,
+    restoreUsuario
+  )
 
-// PUT /api/usuarios/:id - Actualizar usuario
-router.put('/:id', protect, requireFullAccess, updateUsuario);
-
-// DELETE /api/usuarios/:id - Desactivar usuario
-router.delete('/:id', protect, requireFullAccess, deleteUsuario);
-
-module.exports = router;
+module.exports = router

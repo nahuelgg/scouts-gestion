@@ -1,9 +1,9 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
-import { 
-  Persona, 
-  PersonaFormData, 
-  FetchPersonasParams, 
-  ApiError
+import {
+  Persona,
+  PersonaFormData,
+  FetchPersonasParams,
+  ApiError,
 } from '../types'
 import { personasAPI } from '../services/api'
 
@@ -95,12 +95,27 @@ export const deletePersona = createAsyncThunk(
   'personas/deletePersona',
   async (id: string, { rejectWithValue }) => {
     try {
-      await personasAPI.delete(id)
-      return id
+      const response = await personasAPI.delete(id)
+      return { id, deletedPersona: response.persona }
     } catch (error: unknown) {
       const apiError = error as ApiError
       return rejectWithValue(
         apiError.response?.data?.message || 'Error eliminando persona'
+      )
+    }
+  }
+)
+
+export const restorePersona = createAsyncThunk(
+  'personas/restorePersona',
+  async (id: string, { rejectWithValue }) => {
+    try {
+      const response = await personasAPI.restore(id)
+      return response.persona
+    } catch (error: unknown) {
+      const apiError = error as ApiError
+      return rejectWithValue(
+        apiError.response?.data?.message || 'Error restaurando persona'
       )
     }
   }
@@ -115,6 +130,10 @@ const personasSlice = createSlice({
     },
     clearCurrentPersona: (state) => {
       state.currentPersona = null
+    },
+    clearAllPersonas: (state) => {
+      // Resetear completamente el estado al hacer logout
+      Object.assign(state, initialState)
     },
   },
   extraReducers: (builder) => {
@@ -195,14 +214,50 @@ const personasSlice = createSlice({
       })
       .addCase(deletePersona.fulfilled, (state, action) => {
         state.isLoading = false
-        state.personas = state.personas.filter((p) => p._id !== action.payload)
+        const { deletedPersona } = action.payload
+        if (deletedPersona) {
+          const index = state.personas.findIndex(
+            (p) => p._id === deletedPersona._id
+          )
+          if (index !== -1) {
+            state.personas[index] = deletedPersona
+          }
+        }
+        if (state.currentPersona?._id === action.payload.id) {
+          state.currentPersona = deletedPersona || null
+        }
       })
       .addCase(deletePersona.rejected, (state, action) => {
+        state.isLoading = false
+        state.error = action.payload as string
+      })
+
+    // Restore Persona
+    builder
+      .addCase(restorePersona.pending, (state) => {
+        state.isLoading = true
+        state.error = null
+      })
+      .addCase(restorePersona.fulfilled, (state, action) => {
+        state.isLoading = false
+        const restoredPersona = action.payload
+        const index = state.personas.findIndex(
+          (p) => p._id === restoredPersona._id
+        )
+        if (index !== -1) {
+          state.personas[index] = restoredPersona
+        }
+        if (state.currentPersona?._id === restoredPersona._id) {
+          state.currentPersona = restoredPersona
+        }
+      })
+      .addCase(restorePersona.rejected, (state, action) => {
         state.isLoading = false
         state.error = action.payload as string
       })
   },
 })
 
-export const { clearError, clearCurrentPersona } = personasSlice.actions
+export const { clearError, clearCurrentPersona, clearAllPersonas } =
+  personasSlice.actions
 export default personasSlice.reducer

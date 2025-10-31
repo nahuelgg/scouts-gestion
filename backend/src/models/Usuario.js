@@ -32,6 +32,17 @@ const usuarioSchema = new mongoose.Schema(
     ultimoLogin: {
       type: Date,
     },
+    deleted: {
+      type: Boolean,
+      default: false,
+    },
+    deletedAt: {
+      type: Date,
+    },
+    deletedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Usuario',
+    },
   },
   {
     timestamps: true,

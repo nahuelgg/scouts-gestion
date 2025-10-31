@@ -18,10 +18,14 @@ import {
   LogoutOutlined,
   SettingOutlined,
   DashboardOutlined,
+  LockOutlined,
 } from '@ant-design/icons'
 import { useNavigate, useLocation, Outlet } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../../utils/hooks'
 import { logout } from '../../store/authSlice'
+import { clearAllPersonas } from '../../store/personasSlice'
+import { clearAllPagos } from '../../store/pagosSlice'
+import { clearAllUsuarios } from '../../store/usuariosSlice'
 
 const { Header, Sider, Content } = Layout
 const { Text } = Typography
@@ -34,16 +38,22 @@ const MainLayout: React.FC = () => {
   const { user } = useAppSelector((state) => state.auth)
 
   const handleLogout = () => {
+    // Limpiar todos los datos del store
     dispatch(logout())
+    dispatch(clearAllPersonas())
+    dispatch(clearAllPagos())
+    dispatch(clearAllUsuarios())
+
+    // Navegar al login
     navigate('/login')
   }
 
   const userMenuItems: MenuProps['items'] = [
     {
-      key: 'profile',
-      icon: <UserOutlined />,
-      label: 'Mi Perfil',
-      onClick: () => navigate('/perfil'),
+      key: 'change-password',
+      icon: <LockOutlined />,
+      label: 'Cambio de Contraseña',
+      onClick: () => navigate('/cambio-contrasena'),
     },
     {
       key: 'settings',
@@ -140,16 +150,20 @@ const MainLayout: React.FC = () => {
             marginBottom: 16,
           }}
         >
-          <Typography.Title
-            level={4}
+          <a
+            onClick={() => navigate('/dashboard')}
             style={{
               margin: 0,
-              color: '#1890ff',
-              fontSize: collapsed ? '16px' : '18px',
+              color: '#2461dbff',
+              fontSize: collapsed ? '18px' : '22px',
+              fontWeight: 900,
+              textDecoration: 'none',
+              cursor: 'pointer',
+              lineHeight: 1.35,
             }}
           >
-            {collapsed ? 'S' : 'Scouts'}
-          </Typography.Title>
+            {collapsed ? 'T' : 'Tantanaku'}
+          </a>
         </div>
 
         <Menu

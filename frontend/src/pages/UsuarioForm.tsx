@@ -11,7 +11,14 @@ import {
   message,
   Space,
   Switch,
+  List,
+  Alert,
 } from 'antd'
+import {
+  ArrowLeftOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+} from '@ant-design/icons'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../utils/hooks'
 import {
@@ -22,7 +29,13 @@ import {
   clearCurrentUsuario,
 } from '../store/usuariosSlice'
 import { personasAPI, rolesAPI } from '../services/api'
-import { UsuarioFormData, Persona, Rol } from '../types'
+import {
+  User,
+  Persona,
+  Rol,
+  UsuarioFormData,
+  UsuarioFormValues, // ← Nueva interfaz agregada
+} from '../types'
 
 const { Title } = Typography
 const { Option } = Select
@@ -40,8 +53,31 @@ const UsuarioForm: React.FC = () => {
   const [roles, setRoles] = useState<Rol[]>([])
   const [loadingPersonas, setLoadingPersonas] = useState(false)
   const [loadingRoles, setLoadingRoles] = useState(false)
+  const [newPassword, setNewPassword] = useState('')
 
   const isEditing = !!id
+
+  // Validaciones para mostrar los requisitos de la contraseña
+  const passwordRequirements = [
+    {
+      text: 'Al menos 6 caracteres',
+      valid: newPassword.length >= 6,
+    },
+    {
+      text: 'Al menos una letra minúscula',
+      valid: /[a-z]/.test(newPassword),
+    },
+    {
+      text: 'Al menos una letra mayúscula',
+      valid: /[A-Z]/.test(newPassword),
+    },
+    {
+      text: 'Al menos un número',
+      valid: /\d/.test(newPassword),
+    },
+  ]
+
+  const isValidPassword = passwordRequirements.every((req) => req.valid)
 
   useEffect(() => {
     loadPersonas()
@@ -77,7 +113,12 @@ const UsuarioForm: React.FC = () => {
   const loadPersonas = async () => {
     try {
       setLoadingPersonas(true)
-      const response = await personasAPI.getAll()
+
+      // Si estamos creando un nuevo usuario, filtrar personas que ya tienen usuario
+      // Si estamos editando, mostrar todas las personas
+      const params = !isEditing ? { withoutUser: true } : {}
+
+      const response = await personasAPI.getAll(params)
       setPersonas(response.personas || response)
     } catch (error) {
       message.error('Error cargando personas')
@@ -99,7 +140,11 @@ const UsuarioForm: React.FC = () => {
     }
   }
 
-  const onFinish = async (values: any) => {
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewPassword(e.target.value)
+  }
+
+  const onFinish = async (values: UsuarioFormValues) => {
     const formData: UsuarioFormData = {
       username: values.username,
       password: values.password,
@@ -138,7 +183,21 @@ const UsuarioForm: React.FC = () => {
 
   return (
     <div>
-      <Title level={2}>{isEditing ? 'Editar Usuario' : 'Nuevo Usuario'}</Title>
+      {/* Header */}
+      <div style={{ marginBottom: 24 }}>
+        <Space>
+          <Button
+            icon={<ArrowLeftOutlined />}
+            onClick={() => navigate('/usuarios')}
+            type="text"
+          >
+            Volver
+          </Button>
+          <Title level={2} style={{ margin: 0 }}>
+            {isEditing ? 'Editar Usuario' : 'Nuevo Usuario'}
+          </Title>
+        </Space>
+      </div>
 
       <Card>
         <Form
@@ -185,6 +244,11 @@ const UsuarioForm: React.FC = () => {
                           message:
                             'La contraseña debe tener al menos 6 caracteres',
                         },
+                        {
+                          pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+                          message:
+                            'La contraseña debe contener al menos una minúscula, una mayúscula y un número',
+                        },
                       ]
                     : [
                         {
@@ -196,6 +260,11 @@ const UsuarioForm: React.FC = () => {
                           message:
                             'La contraseña debe tener al menos 6 caracteres',
                         },
+                        {
+                          pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+                          message:
+                            'La contraseña debe contener al menos una minúscula, una mayúscula y un número',
+                        },
                       ]
                 }
               >
@@ -205,8 +274,68 @@ const UsuarioForm: React.FC = () => {
                       ? 'Dejar vacío para mantener contraseña actual'
                       : 'Ingresa la contraseña'
                   }
+                  onChange={handlePasswordChange}
                 />
               </Form.Item>
+
+              {/* Mostrar requisitos de contraseña cuando el usuario esté escribiendo */}
+              {newPassword && (newPassword.length > 0 || !isEditing) && (
+                <Card size="small" style={{ marginTop: 8 }}>
+                  <Typography.Text
+                    strong
+                    style={{ marginBottom: 8, display: 'block' }}
+                  >
+                    Requisitos de la contraseña:
+                  </Typography.Text>
+                  <List
+                    size="small"
+                    dataSource={passwordRequirements}
+                    renderItem={(requirement) => (
+                      <List.Item style={{ padding: '4px 0' }}>
+                        <Space>
+                          {requirement.valid ? (
+                            <CheckCircleOutlined style={{ color: '#52c41a' }} />
+                          ) : (
+                            <CloseCircleOutlined style={{ color: '#ff4d4f' }} />
+                          )}
+                          <Typography.Text
+                            style={{
+                              color: requirement.valid ? '#52c41a' : '#ff4d4f',
+                              fontSize: '12px',
+                            }}
+                          >
+                            {requirement.text}
+                          </Typography.Text>
+                        </Space>
+                      </List.Item>
+                    )}
+                  />
+                  {!isValidPassword && newPassword.length > 0 && (
+                    <Alert
+                      message="La contraseña no cumple con todos los requisitos"
+                      type="warning"
+                      style={{ marginTop: 8 }}
+                    />
+                  )}
+                  {isValidPassword && newPassword.length > 0 && (
+                    <Alert
+                      message="¡Contraseña válida!"
+                      type="success"
+                      style={{ marginTop: 8 }}
+                    />
+                  )}
+                </Card>
+              )}
+
+              {/* Información adicional para modo edición */}
+              {/* {isEditing && !newPassword && (
+                <Alert
+                  message="Información"
+                  description="Deja este campo vacío si no deseas cambiar la contraseña actual del usuario."
+                  type="info"
+                  style={{ marginTop: 8 }}
+                />
+              )} */}
             </Col>
           </Row>
 
