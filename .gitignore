@@ -1,10 +1,16 @@
 # Dependencies
 node_modules/
 */node_modules/
+package-lock.json
+*/package-lock.json
+yarn.lock
+*/yarn.lock
 
 # Production builds
 build/
+*/build/
 dist/
+*/dist/
 
 # Environment variables
 .env
@@ -12,12 +18,20 @@ dist/
 .env.development.local
 .env.test.local
 .env.production.local
+backend/.env
+frontend/.env
 
 # Logs
+logs/
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
+
+# Backend specific logs
+backend/logs/
+backend/*.log
 
 # Runtime data
 pids
@@ -89,13 +103,72 @@ dist
 # Uploads
 uploads/
 !uploads/.gitkeep
+backend/uploads/
+!backend/uploads/.gitkeep
 
-# IDE
+# Temporary files and quarantine
+temp/
+tmp/
+backend/quarantine/
+*.tmp
+*.temp
+
+# IDE and Editors
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
 
-# OS
+# OS generated files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Certificates and keys
+*.pem
+*.key
+*.crt
+*.csr
+ssl/
+certs/
+
+# Backup files
+*.bak
+*.backup
+*.swp
+
+# Monitor and process files
+.monitor
+.pm2/
+
+# Local development
+.local/
+
+# Testing
+test-results/
+coverage-report/
+
+# Documentation builds
+docs/build/
+
+# Memory dumps
+*.heapsnapshot
+
+# TypeScript incremental compilation
+*.tsbuildinfo
+
+# ESLint cache
+.eslintcache
+
+# Styled-components cache
+.stylelintcache

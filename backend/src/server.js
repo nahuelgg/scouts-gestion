@@ -3,7 +3,6 @@ const path = require('path')
 require('dotenv').config()
 
 const connectDB = require('./config/database')
-const { showConfigStatus } = require('./utils/configValidator')
 const logger = require('./utils/logger')
 
 // Middlewares centralizados
@@ -19,9 +18,6 @@ const {
   getRequestLogger,
   addRequestTiming,
 } = require('./middleware/requestLogger')
-
-// Validar configuración antes de iniciar el servidor
-showConfigStatus()
 
 // Configuración centralizada
 const CONFIG = {
