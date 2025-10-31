@@ -1,12 +1,6 @@
-import axios, { AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios'
+import axios, { InternalAxiosRequestConfig } from 'axios'
 import type { ApiConfig, ApiError } from '../types/api'
 import { APP_CONSTANTS, validateConfig } from '../types/api'
-import { showFrontendConfigStatus } from '../utils/configValidator'
-
-// Mostrar estado de configuración en desarrollo
-if (process.env.NODE_ENV === 'development') {
-  showFrontendConfigStatus()
-}
 
 // Configuración centralizada
 const CONFIG: ApiConfig = {
