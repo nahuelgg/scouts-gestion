@@ -1,9 +1,11 @@
 import api from './baseApi'
-import { FetchPagosParams } from '../types'
+import { FetchPagosParams, PaginatedPagosResponse } from '../types'
 
 // Servicios de pagos
 export const pagosAPI = {
-  getAll: async (params?: FetchPagosParams) => {
+  getAll: async (
+    params?: FetchPagosParams
+  ): Promise<PaginatedPagosResponse> => {
     const response = await api.get('/pagos', { params })
     return response.data
   },

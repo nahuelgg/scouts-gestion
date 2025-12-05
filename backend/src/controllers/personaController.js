@@ -22,6 +22,8 @@ const getPersonas = async (req, res) => {
       limit = 10,
       search = '',
       rama = '',
+      funcion = '',
+      activo = '',
       dni = '',
       includeDeleted = true,
       withoutUser = false,
@@ -61,6 +63,20 @@ const getPersonas = async (req, res) => {
 
     if (rama) {
       filter.rama = rama
+    }
+
+    if (funcion) {
+      filter.funcion = funcion
+    }
+
+    if (activo !== undefined && activo !== '') {
+      filter.activo = activo === 'true'
+    }
+
+    if (req.query.es_mayor === 'true') {
+      const eighteenYearsAgo = new Date()
+      eighteenYearsAgo.setFullYear(eighteenYearsAgo.getFullYear() - 18)
+      filter.fechaNacimiento = { $lte: eighteenYearsAgo }
     }
 
     const personas = await Persona.find(filter)
@@ -250,6 +266,7 @@ const deletePersona = async (req, res) => {
 
     // Soft delete - marcar como eliminada
     persona.deleted = true
+    persona.activo = false // Marcar también como inactiva
     persona.deletedAt = new Date()
     await persona.save()
 
@@ -287,6 +304,7 @@ const restorePersona = async (req, res) => {
 
     // Restaurar persona
     persona.deleted = false
+    persona.activo = true // Marcar también como activa
     await persona.save()
 
     // Repoblar para enviar respuesta completa

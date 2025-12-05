@@ -13,11 +13,10 @@ const getPagos = async (req, res) => {
       page = 1,
       limit = 10,
       socio = '',
-      mes = '',
       metodoPago = '',
       tipoPago = '',
-      desde = '',
-      hasta = '',
+      startDate = '',
+      endDate = '',
       includeDeleted = true,
     } = req.query
 
@@ -30,22 +29,34 @@ const getPagos = async (req, res) => {
       filter.deleted = { $ne: true }
     }
 
-    if (socio) {
-      filter.socio = socio
-    }
-
-    if (mes) {
-      filter.mesCorrespondiente = mes
-    }
-
     if (metodoPago) {
       filter.metodoPago = metodoPago
     }
 
-    if (desde || hasta) {
+    if (tipoPago) {
+      filter.tipoPago = tipoPago
+    }
+
+    if (startDate || endDate) {
       filter.fechaPago = {}
-      if (desde) filter.fechaPago.$gte = new Date(desde)
-      if (hasta) filter.fechaPago.$lte = new Date(hasta)
+      if (startDate) filter.fechaPago.$gte = new Date(startDate)
+      if (endDate) filter.fechaPago.$lte = new Date(endDate)
+    }
+
+    if (socio) {
+      // Buscar personas que coincidan con el término de búsqueda (nombre, apellido, dni)
+      const personas = await Persona.find({
+        $or: [
+          { nombre: new RegExp(socio, 'i') },
+          { apellido: new RegExp(socio, 'i') },
+          { dni: new RegExp(socio, 'i') },
+        ],
+      }).select('_id')
+
+      const personaIds = personas.map((p) => p._id)
+
+      // Filtrar pagos de esos socios
+      filter.socio = { $in: personaIds }
     }
 
     const pagos = await Pago.find(filter)
@@ -82,7 +93,7 @@ const getPagos = async (req, res) => {
     res.json({
       pagos,
       totalPages: Math.ceil(total / limit),
-      currentPage: page,
+      currentPage: parseInt(page),
       total,
     })
   } catch (error) {

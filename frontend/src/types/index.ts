@@ -146,9 +146,12 @@ export interface FetchPersonasParams {
   page?: number
   limit?: number
   rama?: string
+  funcion?: string
+  activo?: boolean
   search?: string
   includeDeleted?: boolean
   withoutUser?: boolean
+  es_mayor?: boolean
 }
 
 export interface FetchPagosParams {
@@ -156,8 +159,12 @@ export interface FetchPagosParams {
   limit?: number
   socio?: string
   año?: number
-  mes?: string
+  startDate?: string
+  endDate?: string
   includeDeleted?: boolean
+  metodoPago?: string
+  tipoPago?: string
+  estado?: string
 }
 
 // Interfaces para formularios adicionales
@@ -186,6 +193,28 @@ export interface FetchUsuariosParams {
   activo?: boolean
   search?: string
   includeDeleted?: boolean
+}
+
+// Respuestas paginadas específicas
+export interface PaginatedPersonasResponse {
+  personas: Persona[]
+  totalPages: number
+  currentPage: number
+  total: number
+}
+
+export interface PaginatedPagosResponse {
+  pagos: Pago[]
+  totalPages: number
+  currentPage: number
+  total: number
+}
+
+export interface PaginatedUsuariosResponse {
+  usuarios: User[]
+  totalPages: number
+  currentPage: number
+  total: number
 }
 
 // Tipos para respuestas específicas de usuarios

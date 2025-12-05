@@ -1,18 +1,23 @@
 import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { message } from 'antd'
-import { useAppDispatch } from '../utils/hooks'
+import { useAppDispatch, useAppSelector } from '../utils/hooks'
 import {
   fetchPersonas,
   deletePersona,
   restorePersona,
 } from '../store/personasSlice'
 import { ramasAPI } from '../services/api'
-import { Persona, Rama } from '../types'
+import { Persona, Rama, FetchPersonasParams } from '../types'
 
 export const useSociosActions = () => {
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
+
+  // Obtener estado de paginación del store
+  const { currentPage, totalPages, total } = useAppSelector(
+    (state) => state.personas
+  )
 
   const [deleteModalVisible, setDeleteModalVisible] = useState(false)
   const [personaToDelete, setPersonaToDelete] = useState<Persona | null>(null)
@@ -21,12 +26,19 @@ export const useSociosActions = () => {
   const [actionLoading, setActionLoading] = useState(false)
   const [ramas, setRamas] = useState<Rama[]>([])
   const [ramasLoading, setRamasLoading] = useState(false)
+  const [pageSize, setPageSize] = useState(20)
 
   const loadPersonas = useCallback(
-    (params = {}) => {
-      dispatch(fetchPersonas({ ...params, includeDeleted: true }))
+    (params: FetchPersonasParams = {}) => {
+      const paginationParams: FetchPersonasParams = {
+        page: params.page || currentPage,
+        limit: params.limit || pageSize,
+        includeDeleted: true,
+        ...params,
+      }
+      dispatch(fetchPersonas(paginationParams))
     },
-    [dispatch]
+    [dispatch, currentPage, pageSize]
   )
 
   const loadRamas = useCallback(async () => {
@@ -112,6 +124,15 @@ export const useSociosActions = () => {
     navigate('/socios/nuevo')
   }
 
+  const handlePageChange = (page: number, newPageSize?: number) => {
+    if (newPageSize && newPageSize !== pageSize) {
+      setPageSize(newPageSize)
+      loadPersonas({ page: 1, limit: newPageSize })
+    } else {
+      loadPersonas({ page, limit: pageSize })
+    }
+  }
+
   return {
     // State
     deleteModalVisible,
@@ -121,6 +142,10 @@ export const useSociosActions = () => {
     actionLoading,
     ramas,
     ramasLoading,
+    currentPage,
+    pageSize,
+    totalPages,
+    total,
 
     // Actions
     loadPersonas,
@@ -134,5 +159,6 @@ export const useSociosActions = () => {
     handleConfirmRestore,
     handleCancelRestore,
     handleCreateNew,
+    handlePageChange,
   }
 }

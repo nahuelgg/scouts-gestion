@@ -1,27 +1,43 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { message } from 'antd'
-import { useAppDispatch } from '../utils/hooks'
+import { useAppDispatch, useAppSelector } from '../utils/hooks'
 import {
   fetchUsuarios,
   deleteUsuario,
   restoreUsuario,
 } from '../store/usuariosSlice'
-import { User } from '../types'
+import { rolesAPI } from '../services/api'
+import { User, FetchUsuariosParams, Rol } from '../types'
 
 export const useUsuariosActions = () => {
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
+
+  // Obtener estado de paginación del store
+  const { currentPage, totalPages, total } = useAppSelector(
+    (state) => state.usuarios
+  )
 
   const [deleteModalVisible, setDeleteModalVisible] = useState(false)
   const [userToDelete, setUserToDelete] = useState<User | null>(null)
   const [restoreModalVisible, setRestoreModalVisible] = useState(false)
   const [userToRestore, setUserToRestore] = useState<User | null>(null)
   const [actionLoading, setActionLoading] = useState(false)
+  const [pageSize, setPageSize] = useState(20)
 
-  const loadUsuarios = () => {
-    dispatch(fetchUsuarios({ includeDeleted: true }))
-  }
+  const loadUsuarios = useCallback(
+    (params: FetchUsuariosParams = {}) => {
+      const paginationParams: FetchUsuariosParams = {
+        page: params.page || currentPage,
+        limit: params.limit || pageSize,
+        includeDeleted: true,
+        ...params,
+      }
+      dispatch(fetchUsuarios(paginationParams))
+    },
+    [dispatch, currentPage, pageSize]
+  )
 
   const handleView = (user: User) => {
     navigate(`/usuarios/${user._id}`)
@@ -97,6 +113,31 @@ export const useUsuariosActions = () => {
     navigate(`/usuarios/${user._id}/change-password`)
   }
 
+  const handlePageChange = (page: number, newPageSize?: number) => {
+    if (newPageSize && newPageSize !== pageSize) {
+      setPageSize(newPageSize)
+      loadUsuarios({ page: 1, limit: newPageSize })
+    } else {
+      loadUsuarios({ page, limit: pageSize })
+    }
+  }
+
+  const [roles, setRoles] = useState<Rol[]>([])
+  const [rolesLoading, setRolesLoading] = useState(false)
+
+  const loadRoles = useCallback(async () => {
+    setRolesLoading(true)
+    try {
+      const response = await rolesAPI.getAll()
+      setRoles(response)
+    } catch (error) {
+      console.error('Error cargando roles:', error)
+      message.error('Error cargando roles')
+    } finally {
+      setRolesLoading(false)
+    }
+  }, [])
+
   return {
     // State
     deleteModalVisible,
@@ -104,9 +145,16 @@ export const useUsuariosActions = () => {
     restoreModalVisible,
     userToRestore,
     actionLoading,
+    currentPage,
+    pageSize,
+    totalPages,
+    total,
+    roles,
+    rolesLoading,
 
     // Actions
     loadUsuarios,
+    loadRoles,
     handleView,
     handleEdit,
     handleDelete,
@@ -117,5 +165,6 @@ export const useUsuariosActions = () => {
     handleCancelRestore,
     handleCreateNew,
     handleChangePassword,
+    handlePageChange,
   }
 }

@@ -4,6 +4,8 @@ import { SearchOutlined } from '@ant-design/icons'
 import { UsuariosFilters } from '../../hooks/useUsuariosFilters'
 import { ROLES, ESTADOS_USUARIO } from '../../utils/usuarios/display'
 
+import { Rol } from '../../types'
+
 const { Search } = Input
 const { Option } = Select
 
@@ -12,11 +14,12 @@ interface UsuariosFiltersComponentProps {
   onFiltersChange: (filters: Partial<UsuariosFilters>) => void
   onClearFilters: () => void
   hasFullAccess: boolean
+  roles: Rol[]
 }
 
 export const UsuariosFiltersComponent: React.FC<
   UsuariosFiltersComponentProps
-> = ({ filters, onFiltersChange, onClearFilters, hasFullAccess }) => {
+> = ({ filters, onFiltersChange, onClearFilters, hasFullAccess, roles }) => {
   return (
     <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
       <Col xs={24} sm={12} md={8}>
@@ -38,9 +41,9 @@ export const UsuariosFiltersComponent: React.FC<
           style={{ width: '100%' }}
           allowClear
         >
-          {ROLES.map((rol) => (
-            <Option key={rol.value} value={rol.value}>
-              {rol.label}
+          {roles.map((rol) => (
+            <Option key={rol._id} value={rol._id}>
+              {rol.nombre.charAt(0).toUpperCase() + rol.nombre.slice(1)}
             </Option>
           ))}
         </Select>
@@ -62,20 +65,7 @@ export const UsuariosFiltersComponent: React.FC<
         </Select>
       </Col>
 
-      <Col xs={24} sm={12} md={4}>
-        <Space>
-          {hasFullAccess && (
-            <Checkbox
-              checked={filters.showDeleted}
-              onChange={(e) =>
-                onFiltersChange({ showDeleted: e.target.checked })
-              }
-            >
-              Mostrar eliminados
-            </Checkbox>
-          )}
-        </Space>
-      </Col>
+
 
       <Col xs={24} sm={12} md={4}>
         <Button onClick={onClearFilters} style={{ width: '100%' }}>

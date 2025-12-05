@@ -1,8 +1,17 @@
-import React, { useEffect, useMemo } from 'react'
-import { Card, Row, Col, Typography, Space, Button, Statistic, message } from 'antd'
+import React, { useEffect, useMemo, useCallback } from 'react'
+import {
+  Card,
+  Row,
+  Col,
+  Typography,
+  Space,
+  Button,
+  Statistic,
+  message,
+} from 'antd'
 import { PlusOutlined, SearchOutlined } from '@ant-design/icons'
 import { useAppDispatch, useAppSelector } from '../utils/hooks'
-import { fetchPagos, clearError } from '../store/pagosSlice'
+import { clearError } from '../store/pagosSlice'
 import { formatCurrency } from '../utils/currency'
 import { Pago } from '../types'
 
@@ -14,7 +23,10 @@ import { usePagosActions } from '../hooks/usePagosActions'
 // Componentes especializados
 import { PagosFiltersComponent } from '../components/Pagos/PagosFilters'
 import { PagosTable } from '../components/Pagos/PagosTable'
-import { DeletePagoModal, RestorePagoModal } from '../components/Pagos/PagosModals'
+import {
+  DeletePagoModal,
+  RestorePagoModal,
+} from '../components/Pagos/PagosModals'
 
 const { Title } = Typography
 
@@ -26,16 +38,21 @@ const PagosList: React.FC = () => {
   const { user } = useAppSelector((state) => state.auth)
 
   // Hooks customizados
-  const { filters, filteredPagos, updateFilters, clearFilters } = usePagosFilters(pagos, user)
   const permissions = usePagosPermissions(user)
   const actions = usePagosActions()
+  const { filters, updateFilters, clearFilters, canOnlyView } =
+    usePagosFilters(user)
 
-  // Estadísticas calculadas
+  // Estadísticas calculadas (basadas en datos de la página actual)
   const statistics = useMemo(() => {
-    const pagosActivos = filteredPagos.filter(pago => !pago.deleted)
+    const pagosActivos = pagos.filter((pago) => !pago.deleted)
     const totalMonto = pagosActivos.reduce((sum, pago) => sum + pago.monto, 0)
-    const pagosConfirmados = pagosActivos.filter(pago => pago.estado === 'confirmado').length
-    const pagosPendientes = pagosActivos.filter(pago => pago.estado === 'pendiente').length
+    const pagosConfirmados = pagosActivos.filter(
+      (pago) => pago.estado === 'confirmado'
+    ).length
+    const pagosPendientes = pagosActivos.filter(
+      (pago) => pago.estado === 'pendiente'
+    ).length
 
     return {
       totalPagos: pagosActivos.length,
@@ -43,12 +60,22 @@ const PagosList: React.FC = () => {
       pagosConfirmados,
       pagosPendientes,
     }
-  }, [filteredPagos])
+  }, [pagos])
 
   // Efectos
   useEffect(() => {
-    actions.loadPagos()
-  }, [])
+    const startDate = filters.dateRange?.[0]?.toISOString()
+    const endDate = filters.dateRange?.[1]?.toISOString()
+
+    actions.loadPagos({
+      page: 1, // Resetear a página 1 cuando cambian los filtros
+      metodoPago: filters.selectedMetodoPago || undefined,
+      tipoPago: filters.selectedTipoPago || undefined,
+      socio: filters.searchText || undefined,
+      startDate,
+      endDate,
+    })
+  }, [filters])
 
   useEffect(() => {
     if (error) {
@@ -109,8 +136,12 @@ const PagosList: React.FC = () => {
 
         {/* Tabla */}
         <PagosTable
-          pagos={filteredPagos}
+          pagos={pagos}
           loading={isLoading}
+          currentPage={actions.currentPage}
+          pageSize={actions.pageSize}
+          total={actions.total}
+          onPageChange={actions.handlePageChange}
           canDeletePago={permissions.canDeletePago}
           canEditPago={permissions.canEditPago}
           onView={actions.handleView}

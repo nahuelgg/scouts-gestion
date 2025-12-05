@@ -21,6 +21,10 @@ import {
 interface UsuariosTableProps {
   usuarios: User[]
   loading: boolean
+  currentPage: number
+  pageSize: number
+  total: number
+  onPageChange: (page: number, pageSize?: number) => void
   canDeleteUser: (user: User) => boolean
   canEditUser: (user: User) => boolean
   onView: (user: User) => void
@@ -34,6 +38,10 @@ interface UsuariosTableProps {
 export const UsuariosTable: React.FC<UsuariosTableProps> = ({
   usuarios,
   loading,
+  currentPage,
+  pageSize,
+  total,
+  onPageChange,
   canDeleteUser,
   canEditUser,
   onView,
@@ -215,11 +223,15 @@ export const UsuariosTable: React.FC<UsuariosTableProps> = ({
       rowKey="_id"
       scroll={{ x: 1400 }}
       pagination={{
+        current: currentPage,
+        pageSize: pageSize,
+        total: total,
         showSizeChanger: true,
         showTotal: (total, range) =>
           `${range[0]}-${range[1]} de ${total} usuarios`,
         pageSizeOptions: ['10', '20', '50', '100'],
-        defaultPageSize: 20,
+        onChange: onPageChange,
+        onShowSizeChange: onPageChange,
       }}
       rowClassName={(record) => (record.deleted ? 'table-row-deleted' : '')}
     />

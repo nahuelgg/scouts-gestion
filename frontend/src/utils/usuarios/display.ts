@@ -87,8 +87,8 @@ export const ROLES = [
 ]
 
 export const ESTADOS_USUARIO = [
-  { value: 'activo', label: 'Activo' },
-  { value: 'inactivo', label: 'Inactivo' },
+  { value: 'true', label: 'Activo' },
+  { value: 'false', label: 'Inactivo' },
 ]
 
 // Funciones de validación

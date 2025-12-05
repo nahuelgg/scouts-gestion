@@ -130,7 +130,7 @@ const validateUsuarioQuery = [
     .withMessage('El límite debe estar entre 1 y 2000'),
 
   query('rol')
-    .optional()
+    .optional({ checkFalsy: true })
     .custom((value) => {
       if (value && !mongoose.Types.ObjectId.isValid(value)) {
         throw new Error('ID de rol inválido')
@@ -144,7 +144,7 @@ const validateUsuarioQuery = [
     .withMessage('El filtro activo debe ser true o false'),
 
   query('search')
-    .optional()
+    .optional({ checkFalsy: true })
     .trim()
     .escape()
     .isLength({ min: 1, max: 50 })

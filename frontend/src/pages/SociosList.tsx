@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react'
+import React, { useEffect, useMemo, useCallback } from 'react'
 import {
   Card,
   Row,
@@ -36,35 +36,29 @@ const SociosList: React.FC = () => {
   const dispatch = useAppDispatch()
 
   // Redux state
-  const { personas, isLoading, error } = useAppSelector(
+  const { personas, isLoading, error, total } = useAppSelector(
     (state) => state.personas
   )
   const { user } = useAppSelector((state) => state.auth)
 
   // Hooks customizados
-  const {
-    filters,
-    filteredPersonas,
-    updateFilters,
-    clearFilters,
-    hasFullAccess,
-    isJefeDeRama,
-  } = useSociosFilters(personas, user)
   const permissions = useSociosPermissions(user)
   const actions = useSociosActions()
+  const { filters, updateFilters, clearFilters, hasFullAccess, isJefeDeRama } =
+    useSociosFilters(user)
 
-  // Estadísticas calculadas
+  // Estadísticas calculadas (ahora basadas en el total del servidor)
   const statistics = useMemo(() => {
-    const sociosActivos = filteredPersonas.filter(
+    const sociosActivos = personas.filter(
       (persona) => !persona.deleted && persona.activo
     )
-    const sociosInactivos = filteredPersonas.filter(
-      (persona) => !persona.deleted && !persona.activo
+    const sociosInactivos = personas.filter(
+      (persona) => !persona.activo || persona.deleted
     )
-    const mayoresDeEdad = filteredPersonas.filter(
+    const mayoresDeEdad = personas.filter(
       (persona) => !persona.deleted && isPersonaMayor(persona)
     )
-    const educadores = filteredPersonas.filter(
+    const educadores = personas.filter(
       (persona) => !persona.deleted && persona.funcion === 'educador'
     )
 
@@ -74,13 +68,23 @@ const SociosList: React.FC = () => {
       mayoresDeEdad: mayoresDeEdad.length,
       educadores: educadores.length,
     }
-  }, [filteredPersonas])
+  }, [personas])
 
   // Efectos
   useEffect(() => {
     actions.loadRamas()
-    actions.loadPersonas()
   }, [])
+
+  useEffect(() => {
+    actions.loadPersonas({
+      page: 1, // Resetear a página 1 cuando cambian los filtros
+      search: filters.searchText,
+      rama: filters.selectedRama,
+      funcion: filters.selectedFuncion,
+      activo: filters.selectedEstado ? filters.selectedEstado === 'true' : undefined,
+      es_mayor: filters.showOnlyMayores || undefined,
+    })
+  }, [filters])
 
   useEffect(() => {
     if (error) {
@@ -152,8 +156,12 @@ const SociosList: React.FC = () => {
 
         {/* Tabla */}
         <SociosTable
-          personas={filteredPersonas}
+          personas={personas}
           loading={isLoading}
+          currentPage={actions.currentPage}
+          pageSize={actions.pageSize}
+          total={actions.total}
+          onPageChange={actions.handlePageChange}
           canDeletePersona={permissions.canDeletePersona}
           canEditPersona={permissions.canEditPersona}
           canManagePersona={permissions.canManagePersona}

@@ -1,4 +1,5 @@
 const Usuario = require('../models/Usuario')
+const Persona = require('../models/Persona')
 const bcrypt = require('bcryptjs')
 
 // @desc    Obtener todos los usuarios
@@ -32,8 +33,22 @@ const getUsuarios = async (req, res) => {
     }
 
     if (search) {
-      // Buscar por username o datos de la persona
-      filter.$or = [{ username: new RegExp(search, 'i') }]
+      // Buscar personas que coincidan con el término de búsqueda
+      const personas = await Persona.find({
+        $or: [
+          { nombre: new RegExp(search, 'i') },
+          { apellido: new RegExp(search, 'i') },
+          { dni: new RegExp(search, 'i') },
+        ],
+      }).select('_id')
+
+      const personaIds = personas.map((p) => p._id)
+
+      // Buscar por username o por ID de persona encontrada
+      filter.$or = [
+        { username: new RegExp(search, 'i') },
+        { persona: { $in: personaIds } },
+      ]
     }
 
     const usuarios = await Usuario.find(filter)

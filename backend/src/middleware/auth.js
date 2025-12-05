@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken')
 const Usuario = require('../models/Usuario')
+const logger = require('../utils/logger')
 
 // =============================================================================
 // FUNCIONES HELPER COMUNES
@@ -60,7 +61,7 @@ const checkPagoRamaOwnership = async (pagoId, userRamaId) => {
 
     return { success: true, pago }
   } catch (error) {
-    console.error('Error verificando ownership de rama para pago:', error)
+    logger.error('Error verificando ownership de rama para pago:', { error: error.message, stack: error.stack })
     return { error: 'Error interno del servidor', status: 500 }
   }
 }
@@ -99,7 +100,7 @@ const checkPersonaRestrictedAccess = async (req) => {
         }
       }
     } catch (error) {
-      console.error('Error verificando acceso restringido a persona:', error)
+      logger.error('Error verificando acceso restringido a persona:', { error: error.message, stack: error.stack })
       return {
         allowed: false,
         error: 'Error interno del servidor',
@@ -155,7 +156,7 @@ const checkPagoRestrictedAccess = async (req) => {
         }
       }
     } catch (error) {
-      console.error('Error verificando acceso restringido a pago:', error)
+      logger.error('Error verificando acceso restringido a pago:', { error: error.message, stack: error.stack })
       return {
         allowed: false,
         error: 'Error interno del servidor',
@@ -217,7 +218,7 @@ const protect = async (req, res, next) => {
 
       next()
     } catch (error) {
-      console.error(error)
+      logger.error('Error en autenticación:', { error: error.message, stack: error.stack })
       res.status(401).json({ message: 'No autorizado, token inválido' })
     }
   }
@@ -311,7 +312,7 @@ const checkRamaAccess = async (req, res, next) => {
           })
         }
       } catch (error) {
-        console.error('Error verificando acceso a rama:', error)
+        logger.error('Error verificando acceso a rama:', { error: error.message, stack: error.stack })
       }
     }
   }
