@@ -1,14 +1,10 @@
 const winston = require('winston')
 const path = require('path')
-
-// Configurar formato de logs
 const logFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   winston.format.errors({ stack: true }),
   winston.format.json()
 )
-
-// Configurar formato para consola en desarrollo
 const consoleFormat = winston.format.combine(
   winston.format.colorize(),
   winston.format.timestamp({ format: 'HH:mm:ss' }),
@@ -16,8 +12,6 @@ const consoleFormat = winston.format.combine(
     return `${timestamp} [${level}]: ${stack || message}`
   })
 )
-
-// Crear directorio de logs si no existe
 const logsDir = path.join(__dirname, '../../logs')
 require('fs').mkdirSync(logsDir, { recursive: true })
 
@@ -53,8 +47,6 @@ if (process.env.NODE_ENV === 'development') {
     })
   )
 }
-
-// Crear logger
 const logger = winston.createLogger({
   level:
     process.env.LOG_LEVEL ||

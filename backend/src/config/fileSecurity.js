@@ -1,21 +1,7 @@
-/**
- * Configuración centralizada de seguridad de archivos
- * Define políticas, límites y reglas de validación empresarial
- *
- * @module FileSecurityConfig
- * @author Sistema de Gestión Scouts
- * @version 1.0.0
- */
 
 const path = require('path')
 
-/**
- * Configuración base de seguridad
- */
 const fileSecurityConfig = {
-  // ============================
-  // CONFIGURACIÓN GENERAL
-  // ============================
   general: {
     enableAdvancedValidation:
       process.env.ENABLE_ADVANCED_FILE_VALIDATION !== 'false',
@@ -27,64 +13,42 @@ const fileSecurityConfig = {
       parseInt(process.env.FILE_VALIDATION_TIMEOUT_MS) || 30000,
   },
 
-  // ============================
-  // TIPOS DE ARCHIVO PERMITIDOS
-  // ============================
   allowedMimeTypes: {
     images: ['image/jpeg', 'image/png'],
     documents: ['application/pdf'],
   },
 
-  // ============================
-  // LÍMITES DE TAMAÑO POR TIPO
-  // ============================
   sizeLimits: {
-    // Imágenes
     'image/jpeg': {
-      maxSize: 2 * 1024 * 1024, // 2MB
-      minSize: 1024, // 1KB mínimo
+      maxSize: 2 * 1024 * 1024,
+      minSize: 1024,
       description: 'Imagen JPEG',
     },
     'image/png': {
-      maxSize: 2 * 1024 * 1024, // 2MB
-      minSize: 1024, // 1KB mínimo
+      maxSize: 2 * 1024 * 1024,
+      minSize: 1024,
       description: 'Imagen PNG',
     },
-
-    // Documentos
     'application/pdf': {
-      maxSize: 10 * 1024 * 1024, // 10MB
-      minSize: 1024, // 1KB mínimo
+      maxSize: 10 * 1024 * 1024,
+      minSize: 1024,
       description: 'Documento PDF',
     },
-
-    // Límite global por defecto
     default: {
-      maxSize: 5 * 1024 * 1024, // 5MB
-      minSize: 1024, // 1KB
+      maxSize: 5 * 1024 * 1024,
+      minSize: 1024,
       description: 'Archivo genérico',
     },
   },
 
-  // ============================
-  // CONFIGURACIÓN DE CUARENTENA
-  // ============================
   quarantine: {
     enabled: process.env.ENABLE_FILE_QUARANTINE !== 'false',
     retentionDays: parseInt(process.env.QUARANTINE_RETENTION_DAYS) || 30,
     baseDirectory:
       process.env.QUARANTINE_BASE_DIR || path.join(process.cwd(), 'quarantine'),
-
-    // Niveles de riesgo que van a cuarentena automáticamente
     autoQuarantineRiskLevels: ['MEDIUM'],
-
-    // Niveles de riesgo que se bloquean inmediatamente
     blockRiskLevels: ['HIGH'],
-
-    // Niveles de riesgo que se permiten sin cuarentena
     allowRiskLevels: ['MINIMAL', 'LOW'],
-
-    // Notificaciones
     notifications: {
       enabled: process.env.ENABLE_QUARANTINE_NOTIFICATIONS !== 'false',
       adminEmails: (process.env.QUARANTINE_ADMIN_EMAILS || '')
@@ -95,8 +59,6 @@ const fileSecurityConfig = {
       notifyOnApproval: false,
       notifyOnRejection: true,
     },
-
-    // Limpieza automática
     cleanup: {
       enabled: process.env.ENABLE_QUARANTINE_CLEANUP !== 'false',
       intervalHours:
@@ -105,64 +67,42 @@ const fileSecurityConfig = {
         parseInt(process.env.QUARANTINE_MAX_RETENTION_DAYS) || 90,
     },
   },
-
-  // ============================
-  // PATRONES DE VALIDACIÓN
-  // ============================
   validation: {
-    // Magic numbers para validación de tipos reales
     magicNumbers: {
       'image/jpeg': [
-        [0xff, 0xd8, 0xff, 0xe0], // JFIF
-        [0xff, 0xd8, 0xff, 0xe1], // EXIF
-        [0xff, 0xd8, 0xff, 0xdb], // JPEG
-        [0xff, 0xd8, 0xff, 0xfe], // JPEG comentario
+        [0xff, 0xd8, 0xff, 0xe0],
+        [0xff, 0xd8, 0xff, 0xe1],
+        [0xff, 0xd8, 0xff, 0xdb],
+        [0xff, 0xd8, 0xff, 0xfe],
       ],
       'image/png': [[0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]],
       'application/pdf': [
-        [0x25, 0x50, 0x44, 0x46], // %PDF
-        [0x25, 0x46, 0x44, 0x46], // %FDF
+        [0x25, 0x50, 0x44, 0x46],
+        [0x25, 0x46, 0x44, 0x46],
       ],
     },
-
-    // Patrones maliciosos conocidos
     maliciousPatterns: [
-      // Scripts embebidos
       /<script[\s\S]*?<\/script>/gi,
       /<iframe[\s\S]*?<\/iframe>/gi,
       /<object[\s\S]*?<\/object>/gi,
       /<embed[\s\S]*?<\/embed>/gi,
       /<form[\s\S]*?<\/form>/gi,
-
-      // Event handlers peligrosos
       /on(load|error|click|mouseover|focus|blur|change|submit)\s*=/gi,
-
-      // URLs y esquemas peligrosos
       /javascript:/gi,
       /vbscript:/gi,
       /data:text\/html/gi,
       /data:application\/javascript/gi,
-
-      // Variantes codificadas
       /%3Cscript/gi,
       /%3C%2Fscript%3E/gi,
       /&lt;script/gi,
       /&lt;%2Fscript&gt;/gi,
-
-      // Inyección de código servidor
       /<\?php/gi,
       /<\?=/gi,
       /<%[\s\S]*?%>/gi,
-
-      // Server-side includes
       /<!--\s*#(include|exec|config|set)/gi,
-
-      // Metadatos sospechosos en imágenes
       /eval\s*\(/gi,
       /document\.write/gi,
       /window\.location/gi,
-
-      // Patrones específicos de malware
       /\.exe["'\s]/gi,
       /\.scr["'\s]/gi,
       /\.bat["'\s]/gi,
@@ -170,8 +110,6 @@ const fileSecurityConfig = {
       /\.com["'\s]/gi,
       /\.pif["'\s]/gi,
     ],
-
-    // Extensiones prohibidas
     forbiddenExtensions: [
       'exe',
       'bat',
@@ -200,11 +138,7 @@ const fileSecurityConfig = {
       'ipa',
       'apk',
     ],
-
-    // Caracteres peligrosos en nombres de archivo
     dangerousFilenameChars: /[<>:"/\\|?*\x00-\x1f\x80-\x9f]/g,
-
-    // Límites de nombre de archivo
     filename: {
       maxLength: 255,
       minLength: 1,
@@ -212,28 +146,21 @@ const fileSecurityConfig = {
       requireExtension: true,
     },
   },
-
-  // ============================
-  // CONFIGURACIÓN DE RIESGO
-  // ============================
   riskAssessment: {
-    // Pesos para cálculo de puntuación de riesgo
     weights: {
-      magicNumberMismatch: 30, // Tipo de archivo no coincide
-      maliciousContent: 40, // Contenido sospechoso encontrado
-      invalidStructure: 25, // Estructura de archivo inválida
-      oversizedFile: 15, // Archivo demasiado grande
-      suspiciousFilename: 20, // Nombre de archivo sospechoso
-      forbiddenExtension: 50, // Extensión prohibida
-      metadataAnomalies: 10, // Anomalías en metadatos
+      magicNumberMismatch: 30,
+      maliciousContent: 40,
+      invalidStructure: 25,
+      oversizedFile: 15,
+      suspiciousFilename: 20,
+      forbiddenExtension: 50,
+      metadataAnomalies: 10,
     },
-
-    // Umbrales para niveles de riesgo
     thresholds: {
-      minimal: 0, // 0-19: MINIMAL
-      low: 20, // 20-39: LOW
-      medium: 40, // 40-69: MEDIUM
-      high: 70, // 70+: HIGH
+      minimal: 0,
+      low: 20,
+      medium: 40,
+      high: 70,
     },
 
     // Factores de riesgo por tipo de archivo
@@ -243,14 +170,8 @@ const fileSecurityConfig = {
       'application/pdf': 1.2, // PDFs tienen mayor riesgo por complejidad
     },
   },
-
-  // ============================
-  // CONFIGURACIÓN DE LOGGING
-  // ============================
   logging: {
     enabled: process.env.ENABLE_FILE_SECURITY_LOGGING !== 'false',
-
-    // Niveles de log por tipo de evento
     levels: {
       fileValidated: 'info',
       fileQuarantined: 'warn',
@@ -260,8 +181,6 @@ const fileSecurityConfig = {
       quarantineApproved: 'info',
       quarantineRejected: 'warn',
     },
-
-    // Información a incluir en logs
     includeMetadata: {
       userInfo: true,
       ipAddress: true,
@@ -270,26 +189,17 @@ const fileSecurityConfig = {
       validationDetails: true,
       timingInformation: true,
     },
-
-    // Configuración para logs de auditoría
     audit: {
       enabled: true,
-      includeFileContent: false, // Por privacidad y rendimiento
+      includeFileContent: false,
       retentionDays: 365,
       compressAfterDays: 30,
     },
   },
-
-  // ============================
-  // CONFIGURACIÓN DE RENDIMIENTO
-  // ============================
   performance: {
-    // Límites de procesamiento
     maxConcurrentValidations: 5,
     validationTimeoutMs: 30000,
-    maxScanSizeBytes: 64 * 1024, // Solo escanear primeros 64KB
-
-    // Cache de validaciones
+    maxScanSizeBytes: 64 * 1024,
     enableValidationCache: true,
     cacheExpiryMinutes: 60,
     maxCacheEntries: 1000,
@@ -300,9 +210,7 @@ const fileSecurityConfig = {
     enableFileDeduplication: true,
   },
 
-  // ============================
   // CONFIGURACIÓN DE AMBIENTE
-  // ============================
   environment: {
     // Configuración por ambiente
     development: {
@@ -328,9 +236,6 @@ const fileSecurityConfig = {
   },
 }
 
-/**
- * Obtiene configuración específica para el ambiente actual
- */
 function getEnvironmentConfig() {
   const env = process.env.NODE_ENV || 'development'
   return {
@@ -339,14 +244,9 @@ function getEnvironmentConfig() {
   }
 }
 
-/**
- * Valida que la configuración sea coherente
- */
 function validateConfig() {
   const config = getEnvironmentConfig()
   const errors = []
-
-  // Validar que los directorios existen
   if (config.quarantine.enabled) {
     const fs = require('fs')
     if (!fs.existsSync(config.quarantine.baseDirectory)) {
@@ -355,15 +255,11 @@ function validateConfig() {
       )
     }
   }
-
-  // Validar límites de tamaño
   for (const [mimeType, limits] of Object.entries(config.sizeLimits)) {
     if (limits.maxSize < limits.minSize) {
       errors.push(`Límite máximo menor que mínimo para ${mimeType}`)
     }
   }
-
-  // Validar configuración de notificaciones
   if (
     config.quarantine.notifications.enabled &&
     config.quarantine.notifications.adminEmails.length === 0
@@ -380,33 +276,21 @@ function validateConfig() {
   return true
 }
 
-/**
- * Obtiene límites de tamaño para un tipo MIME específico
- */
 function getSizeLimitsForType(mimeType) {
   const config = getEnvironmentConfig()
   return config.sizeLimits[mimeType] || config.sizeLimits.default
 }
 
-/**
- * Obtiene configuración de cuarentena activa
- */
 function getQuarantineConfig() {
   const config = getEnvironmentConfig()
   return config.quarantine
 }
 
-/**
- * Obtiene patrones de validación activos
- */
 function getValidationPatterns() {
   const config = getEnvironmentConfig()
   return config.validation
 }
 
-/**
- * Obtiene configuración de evaluación de riesgo
- */
 function getRiskAssessmentConfig() {
   const config = getEnvironmentConfig()
   return config.riskAssessment

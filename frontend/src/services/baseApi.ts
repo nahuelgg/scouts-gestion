@@ -1,12 +1,6 @@
-import axios, { AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios'
+import axios, { InternalAxiosRequestConfig } from 'axios'
 import type { ApiConfig, ApiError } from '../types/api'
 import { APP_CONSTANTS, validateConfig } from '../types/api'
-import { showFrontendConfigStatus } from '../utils/configValidator'
-
-// Mostrar estado de configuración en desarrollo
-if (process.env.NODE_ENV === 'development') {
-  showFrontendConfigStatus()
-}
 
 // Configuración centralizada
 const CONFIG: ApiConfig = {
@@ -18,10 +12,8 @@ const CONFIG: ApiConfig = {
   USER_STORAGE_KEY: APP_CONSTANTS.STORAGE_KEYS.USER,
   LOGIN_REDIRECT: APP_CONSTANTS.ROUTES.LOGIN,
 }
-
-// Validar configuración al inicializar
 if (!validateConfig(CONFIG)) {
-  console.error('Configuración de API inválida:', CONFIG)
+  throw new Error('Configuración de API inválida')
 }
 
 const API_URL = `${CONFIG.API_BASE_URL}/api`
@@ -52,8 +44,6 @@ const setAuthHeader = (
   }
   return config
 }
-
-// Crear instancia de axios con configuración centralizada
 const api = axios.create({
   baseURL: API_URL,
   timeout: CONFIG.API_TIMEOUT,

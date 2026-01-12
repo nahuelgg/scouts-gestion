@@ -1,6 +1,20 @@
-import React, { useEffect, useMemo } from 'react'
-import { Card, Row, Col, Typography, Space, Button, Statistic, message } from 'antd'
-import { PlusOutlined, UserOutlined, TeamOutlined, CrownOutlined } from '@ant-design/icons'
+import React, { useEffect, useMemo, useCallback } from 'react'
+import {
+  Card,
+  Row,
+  Col,
+  Typography,
+  Space,
+  Button,
+  Statistic,
+  message,
+} from 'antd'
+import {
+  PlusOutlined,
+  UserOutlined,
+  TeamOutlined,
+  CrownOutlined,
+} from '@ant-design/icons'
 import { useAppDispatch, useAppSelector } from '../utils/hooks'
 import { clearError } from '../store/usuariosSlice'
 import { User } from '../types'
@@ -13,10 +27,10 @@ import { useUsuariosActions } from '../hooks/useUsuariosActions'
 // Componentes especializados
 import { UsuariosFiltersComponent } from '../components/Usuarios/UsuariosFilters'
 import { UsuariosTable } from '../components/Usuarios/UsuariosTable'
-import { DeleteUsuarioModal, RestoreUsuarioModal } from '../components/Usuarios/UsuariosModals'
-
-// Utils
-import { getRoleHierarchyLevel } from '../utils/usuarios/display'
+import {
+  DeleteUsuarioModal,
+  RestoreUsuarioModal,
+} from '../components/Usuarios/UsuariosModals'
 
 const { Title } = Typography
 
@@ -24,20 +38,33 @@ const UsuariosList: React.FC = () => {
   const dispatch = useAppDispatch()
 
   // Redux state
-  const { usuarios, isLoading, error } = useAppSelector((state) => state.usuarios)
+  const { usuarios, isLoading, error } = useAppSelector(
+    (state) => state.usuarios
+  )
   const { user: currentUser } = useAppSelector((state) => state.auth)
 
   // Hooks customizados
-  const { filters, filteredUsuarios, updateFilters, clearFilters, hasFullAccess } = useUsuariosFilters(usuarios, currentUser)
   const permissions = useUsuariosPermissions(currentUser)
   const actions = useUsuariosActions()
+  const { filters, updateFilters, clearFilters, hasFullAccess } =
+    useUsuariosFilters(currentUser)
 
-  // Estadísticas calculadas
+  // Estadísticas calculadas (basadas en datos de la página actual)
   const statistics = useMemo(() => {
-    const usuariosActivos = filteredUsuarios.filter(user => !user.deleted && user.activo)
-    const usuariosInactivos = filteredUsuarios.filter(user => !user.deleted && !user.activo)
-    const administradores = filteredUsuarios.filter(user => !user.deleted && user.rol?.nombre === 'administrador')
-    const educadores = filteredUsuarios.filter(user => !user.deleted && ['jefe de grupo', 'jefe de rama'].includes(user.rol?.nombre || ''))
+    const usuariosActivos = usuarios.filter(
+      (user) => !user.deleted && user.activo
+    )
+    const usuariosInactivos = usuarios.filter(
+      (user) => !user.activo || user.deleted
+    )
+    const administradores = usuarios.filter(
+      (user) => !user.deleted && user.rol?.nombre === 'administrador'
+    )
+    const educadores = usuarios.filter(
+      (user) =>
+        !user.deleted &&
+        ['jefe de grupo', 'jefe de rama'].includes(user.rol?.nombre || '')
+    )
 
     return {
       totalUsuarios: usuariosActivos.length,
@@ -45,12 +72,21 @@ const UsuariosList: React.FC = () => {
       administradores: administradores.length,
       educadores: educadores.length,
     }
-  }, [filteredUsuarios])
+  }, [usuarios])
 
   // Efectos
   useEffect(() => {
-    actions.loadUsuarios()
+    actions.loadRoles()
   }, [])
+
+  useEffect(() => {
+    actions.loadUsuarios({
+      page: 1, // Resetear a página 1 cuando cambian los filtros
+      search: filters.searchText,
+      rol: filters.selectedRol,
+      activo: filters.selectedStatus ? filters.selectedStatus === 'true' : undefined,
+    })
+  }, [filters])
 
   useEffect(() => {
     if (error) {
@@ -86,7 +122,9 @@ const UsuariosList: React.FC = () => {
 
   const handleChangePassword = (user: User) => {
     if (!permissions.canEditUser(user)) {
-      message.error('No tienes permisos para cambiar la contraseña de este usuario')
+      message.error(
+        'No tienes permisos para cambiar la contraseña de este usuario'
+      )
       return
     }
     actions.handleChangePassword(user)
@@ -124,12 +162,17 @@ const UsuariosList: React.FC = () => {
           onFiltersChange={updateFilters}
           onClearFilters={clearFilters}
           hasFullAccess={hasFullAccess}
+          roles={actions.roles}
         />
 
         {/* Tabla */}
         <UsuariosTable
-          usuarios={filteredUsuarios}
+          usuarios={usuarios}
           loading={isLoading}
+          currentPage={actions.currentPage}
+          pageSize={actions.pageSize}
+          total={actions.total}
+          onPageChange={actions.handlePageChange}
           canDeleteUser={permissions.canDeleteUser}
           canEditUser={permissions.canEditUser}
           onView={actions.handleView}

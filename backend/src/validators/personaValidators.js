@@ -221,11 +221,11 @@ const validatePersonaQuery = [
 
   query('limit')
     .optional()
-    .isInt({ min: 1, max: 2000 })
-    .withMessage('El límite debe estar entre 1 y 2000'),
+    .isInt({ min: 1, max: 100 })
+    .withMessage('El límite debe estar entre 1 y 100'),
 
   query('rama')
-    .optional()
+    .optional({ checkFalsy: true })
     .custom((value) => {
       if (value && !mongoose.Types.ObjectId.isValid(value)) {
         throw new Error('ID de rama inválido')
@@ -234,7 +234,7 @@ const validatePersonaQuery = [
     }),
 
   query('search')
-    .optional()
+    .optional({ checkFalsy: true })
     .trim()
     .isLength({ min: 1, max: 50 })
     .withMessage('La búsqueda debe tener entre 1 y 50 caracteres'),
@@ -243,6 +243,21 @@ const validatePersonaQuery = [
     .optional()
     .isBoolean()
     .withMessage('includeDeleted debe ser true o false'),
+
+  query('funcion')
+    .optional({ checkFalsy: true })
+    .isIn(['ayudante', 'beneficiario', 'educador'])
+    .withMessage('Función inválida'),
+
+  query('activo')
+    .optional()
+    .isBoolean()
+    .withMessage('activo debe ser true o false'),
+
+  query('es_mayor')
+    .optional()
+    .isBoolean()
+    .withMessage('es_mayor debe ser true o false'),
 ]
 
 module.exports = {

@@ -4,28 +4,21 @@ const Persona = require('../models/Persona')
 const Rol = require('../models/Rol')
 const logger = require('../utils/logger')
 
-// Generar JWT
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN || '30d',
   })
 }
 
-// @desc    Autenticar usuario
-// @route   POST /api/auth/login
-// @access  Public
 const login = async (req, res) => {
   try {
     const { username, password } = req.body
-
-    // Validar datos de entrada
     if (!username || !password) {
       return res
         .status(400)
         .json({ message: 'Por favor proporciona username y password' })
     }
 
-    // Buscar usuario
     const usuario = await Usuario.findOne({ username })
       .populate({
         path: 'persona',
@@ -36,15 +29,10 @@ const login = async (req, res) => {
     if (!usuario) {
       return res.status(401).json({ message: 'Credenciales inválidas' })
     }
-
-    // Verificar si el usuario está activo
     if (!usuario.activo) {
       return res.status(401).json({ message: 'Usuario inactivo' })
     }
-
-    // Verificar password
     if (await usuario.matchPassword(password)) {
-      // Actualizar último login
       usuario.ultimoLogin = new Date()
       await usuario.save()
 
@@ -79,9 +67,6 @@ const login = async (req, res) => {
   }
 }
 
-// @desc    Obtener perfil del usuario actual
-// @route   GET /api/auth/profile
-// @access  Private
 const getProfile = async (req, res) => {
   try {
     const usuario = await Usuario.findById(req.user._id)
@@ -94,14 +79,10 @@ const getProfile = async (req, res) => {
 
     res.json(usuario)
   } catch (error) {
-    console.error(error)
     res.status(500).json({ message: 'Error del servidor' })
   }
 }
 
-// @desc    Cambiar password
-// @route   PUT /api/auth/change-password
-// @access  Private
 const changePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body
@@ -129,7 +110,6 @@ const changePassword = async (req, res) => {
 
     res.json({ message: 'Password actualizado exitosamente' })
   } catch (error) {
-    console.error(error)
     res.status(500).json({ message: 'Error del servidor' })
   }
 }

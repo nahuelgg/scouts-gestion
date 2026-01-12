@@ -176,39 +176,40 @@ const validatePagoQuery = [
 
   query('limit')
     .optional()
-    .isInt({ min: 1, max: 2000 })
-    .withMessage('El límite debe estar entre 1 y 2000'),
+    .isInt({ min: 1, max: 100 })
+    .withMessage('El límite debe estar entre 1 y 100'),
 
   query('socio')
-    .optional()
-    .custom((value) => {
-      if (value && !mongoose.Types.ObjectId.isValid(value)) {
-        throw new Error('ID de socio inválido')
-      }
-      return true
-    }),
+    .optional({ checkFalsy: true })
+    .trim()
+    .escape(),
 
   query('año')
-    .optional()
+    .optional({ checkFalsy: true })
     .isInt({ min: 2020, max: new Date().getFullYear() + 1 })
     .withMessage('Año inválido'),
 
-  query('mes')
-    .optional()
-    .matches(/^\d{4}-(0[1-9]|1[0-2])$/)
-    .withMessage('El mes debe tener formato YYYY-MM'),
+  query('startDate')
+    .optional({ checkFalsy: true })
+    .isISO8601()
+    .withMessage('Fecha de inicio inválida'),
+
+  query('endDate')
+    .optional({ checkFalsy: true })
+    .isISO8601()
+    .withMessage('Fecha de fin inválida'),
 
   query('metodoPago')
-    .optional()
+    .optional({ checkFalsy: true })
     .isIn(['efectivo', 'transferencia', 'tarjeta_debito', 'tarjeta_credito'])
     .withMessage('Método de pago inválido'),
   query('tipoPago')
-    .optional()
+    .optional({ checkFalsy: true })
     .isIn(['mensual', 'afiliacion', 'campamento', 'otro'])
     .withMessage('Tipo de pago inválido'),
 
   query('estado')
-    .optional()
+    .optional({ checkFalsy: true })
     .isIn(['pendiente', 'confirmado', 'rechazado'])
     .withMessage('Estado inválido'),
 

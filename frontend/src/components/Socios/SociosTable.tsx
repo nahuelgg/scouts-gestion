@@ -21,6 +21,10 @@ import {
 interface SociosTableProps {
   personas: Persona[]
   loading: boolean
+  currentPage: number
+  pageSize: number
+  total: number
+  onPageChange: (page: number, pageSize?: number) => void
   canDeletePersona: (persona: Persona) => boolean
   canEditPersona: (persona: Persona) => boolean
   canManagePersona: (persona: Persona) => boolean
@@ -33,6 +37,10 @@ interface SociosTableProps {
 export const SociosTable: React.FC<SociosTableProps> = ({
   personas,
   loading,
+  currentPage,
+  pageSize,
+  total,
+  onPageChange,
   canDeletePersona,
   canEditPersona,
   canManagePersona,
@@ -197,11 +205,15 @@ export const SociosTable: React.FC<SociosTableProps> = ({
       rowKey="_id"
       scroll={{ x: 1200 }}
       pagination={{
+        current: currentPage,
+        pageSize: pageSize,
+        total: total,
         showSizeChanger: true,
         showTotal: (total, range) =>
           `${range[0]}-${range[1]} de ${total} socios`,
         pageSizeOptions: ['10', '20', '50', '100'],
-        defaultPageSize: 20,
+        onChange: onPageChange,
+        onShowSizeChange: onPageChange,
       }}
       rowClassName={(record) => (record.deleted ? 'table-row-deleted' : '')}
     />

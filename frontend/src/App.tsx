@@ -77,8 +77,6 @@ const RoleRestrictedRoute: React.FC<{
   if (allowedRoles.length === 0) {
     return <>{children}</>
   }
-
-  // Verificar si el usuario tiene un rol permitido
   const userRole = user?.rol?.nombre
   const hasPermission = !userRole || allowedRoles.includes(userRole)
 

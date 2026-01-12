@@ -3,7 +3,7 @@ import { Input, Select, DatePicker, Row, Col, Space, Button } from 'antd'
 import { SearchOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { PagosFilters } from '../../hooks/usePagosFilters'
-import { METODOS_PAGO, TIPOS_PAGO, MESES } from '../../utils/pagos/display'
+import { METODOS_PAGO, TIPOS_PAGO } from '../../utils/pagos/display'
 
 const { Search } = Input
 const { Option } = Select
@@ -64,22 +64,6 @@ export const PagosFiltersComponent: React.FC<PagosFiltersComponentProps> = ({
           {TIPOS_PAGO.map((tipo) => (
             <Option key={tipo.value} value={tipo.value}>
               {tipo.label}
-            </Option>
-          ))}
-        </Select>
-      </Col>
-
-      <Col xs={24} sm={12} md={8} lg={6}>
-        <Select
-          placeholder="Mes correspondiente"
-          value={filters.selectedMes || undefined}
-          onChange={(value) => onFiltersChange({ selectedMes: value || '' })}
-          style={{ width: '100%' }}
-          allowClear
-        >
-          {MESES.map((mes) => (
-            <Option key={mes.value} value={mes.value}>
-              {mes.label}
             </Option>
           ))}
         </Select>

@@ -1,21 +1,14 @@
 const Rama = require('../models/Rama')
 
-// @desc    Obtener todas las ramas
-// @route   GET /api/ramas
-// @access  Private
 const getRamas = async (req, res) => {
   try {
     const ramas = await Rama.find().populate('jefeRama', 'username')
     res.json(ramas)
   } catch (error) {
-    console.error(error)
     res.status(500).json({ message: 'Error del servidor' })
   }
 }
 
-// @desc    Obtener una rama por ID
-// @route   GET /api/ramas/:id
-// @access  Private
 const getRamaById = async (req, res) => {
   try {
     const rama = await Rama.findById(req.params.id).populate(
@@ -29,14 +22,10 @@ const getRamaById = async (req, res) => {
 
     res.json(rama)
   } catch (error) {
-    console.error(error)
     res.status(500).json({ message: 'Error del servidor' })
   }
 }
 
-// @desc    Crear nueva rama
-// @route   POST /api/ramas
-// @access  Private (administrador)
 const createRama = async (req, res) => {
   try {
     const { nombre, descripcion, edadMinima, edadMaxima, jefeRama } = req.body
@@ -65,14 +54,10 @@ const createRama = async (req, res) => {
       rama: ramaCreada,
     })
   } catch (error) {
-    console.error(error)
     res.status(500).json({ message: 'Error del servidor' })
   }
 }
 
-// @desc    Actualizar rama
-// @route   PUT /api/ramas/:id
-// @access  Private (administrador)
 const updateRama = async (req, res) => {
   try {
     const { nombre, descripcion, edadMinima, edadMaxima, jefeRama } = req.body
@@ -101,14 +86,10 @@ const updateRama = async (req, res) => {
       rama: ramaActualizada,
     })
   } catch (error) {
-    console.error(error)
     res.status(500).json({ message: 'Error del servidor' })
   }
 }
 
-// @desc    Eliminar rama
-// @route   DELETE /api/ramas/:id
-// @access  Private (administrador)
 const deleteRama = async (req, res) => {
   try {
     const rama = await Rama.findById(req.params.id)
@@ -116,8 +97,6 @@ const deleteRama = async (req, res) => {
     if (!rama) {
       return res.status(404).json({ message: 'Rama no encontrada' })
     }
-
-    // Verificar si hay personas asignadas a esta rama
     const Persona = require('../models/Persona')
     const personasEnRama = await Persona.countDocuments({
       rama: req.params.id,
@@ -136,7 +115,6 @@ const deleteRama = async (req, res) => {
       message: 'Rama eliminada exitosamente',
     })
   } catch (error) {
-    console.error(error)
     res.status(500).json({ message: 'Error del servidor' })
   }
 }

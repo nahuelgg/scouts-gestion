@@ -20,8 +20,6 @@ export const useUsuariosPermissions = (
     userRole || ''
   )
   const canOnlyView = !canManageUsers
-
-  // Función para verificar si puede eliminar un usuario
   const canDeleteUser = (targetUser: User) => {
     if (!currentUser) return false
 
@@ -50,8 +48,6 @@ export const useUsuariosPermissions = (
 
     return false
   }
-
-  // Función para verificar si puede editar un usuario
   const canEditUser = (targetUser: User) => {
     if (!currentUser) return false
 
@@ -83,16 +79,12 @@ export const useUsuariosPermissions = (
 
     return false
   }
-
-  // Función para verificar si puede crear nuevos usuarios
   const canCreateUser = () => {
     if (!currentUser) return false
 
     // Solo administrador y jefe de grupo pueden crear usuarios
     return ['administrador', 'jefe de grupo'].includes(userRole || '')
   }
-
-  // Función para verificar si puede cambiar el rol de un usuario
   const canChangeUserRole = (targetUser: User, newRole: string) => {
     if (!currentUser) return false
 

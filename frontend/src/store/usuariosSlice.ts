@@ -140,7 +140,10 @@ const usuariosSlice = createSlice({
       })
       .addCase(fetchUsuarios.fulfilled, (state, action) => {
         state.isLoading = false
-        state.usuarios = action.payload.usuarios || action.payload
+        state.usuarios = action.payload.usuarios
+        state.totalPages = action.payload.totalPages
+        state.currentPage = action.payload.currentPage
+        state.total = action.payload.total
       })
       .addCase(fetchUsuarios.rejected, (state, action) => {
         state.isLoading = false

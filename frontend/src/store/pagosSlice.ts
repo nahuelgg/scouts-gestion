@@ -158,14 +158,10 @@ const pagosSlice = createSlice({
       })
       .addCase(fetchPagos.fulfilled, (state, action) => {
         state.isLoading = false
-        state.pagos = action.payload.pagos || action.payload
-        state.totalPages = action.payload.totalPages || 0
-        state.currentPage = action.payload.currentPage || 1
-        state.total =
-          action.payload.total ||
-          action.payload.pagos?.length ||
-          action.payload.length ||
-          0
+        state.pagos = action.payload.pagos
+        state.totalPages = action.payload.totalPages
+        state.currentPage = action.payload.currentPage
+        state.total = action.payload.total
       })
       .addCase(fetchPagos.rejected, (state, action) => {
         state.isLoading = false

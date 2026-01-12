@@ -19,18 +19,12 @@ export const usePagosPermissions = (user: User | null): PagosPermissions => {
     userRole === 'administrador' || userRole === 'jefe de grupo'
   const canManageRama = userRole === 'jefe de rama'
   const canOnlyView = userRole === 'socio' || !userRole
-
-  // Función para verificar si un pago pertenece a la rama del usuario
   const isPagoFromUserRama = (pago: Pago) => {
     return pago.socio?.rama?._id === userRamaId
   }
-
-  // Función para verificar si un pago pertenece al usuario actual
   const isPagoFromUser = (pago: Pago) => {
     return pago.socio?._id === userPersonaId
   }
-
-  // Función para verificar si el usuario puede eliminar un pago
   const canDeletePago = (pago: Pago) => {
     if (!user) return false
 
@@ -49,8 +43,6 @@ export const usePagosPermissions = (user: User | null): PagosPermissions => {
     // Los socios NO pueden eliminar ningún pago
     return false
   }
-
-  // Función para verificar si el usuario puede editar un pago
   const canEditPago = (pago: Pago) => {
     if (!user) return false
 

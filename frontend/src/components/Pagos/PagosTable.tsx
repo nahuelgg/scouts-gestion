@@ -21,6 +21,10 @@ import {
 interface PagosTableProps {
   pagos: Pago[]
   loading: boolean
+  currentPage: number
+  pageSize: number
+  total: number
+  onPageChange: (page: number, pageSize?: number) => void
   canDeletePago: (pago: Pago) => boolean
   canEditPago: (pago: Pago) => boolean
   onView: (pago: Pago) => void
@@ -32,6 +36,10 @@ interface PagosTableProps {
 export const PagosTable: React.FC<PagosTableProps> = ({
   pagos,
   loading,
+  currentPage,
+  pageSize,
+  total,
+  onPageChange,
   canDeletePago,
   canEditPago,
   onView,
@@ -174,11 +182,15 @@ export const PagosTable: React.FC<PagosTableProps> = ({
       rowKey="_id"
       scroll={{ x: 1200 }}
       pagination={{
+        current: currentPage,
+        pageSize: pageSize,
+        total: total,
         showSizeChanger: true,
         showTotal: (total, range) =>
           `${range[0]}-${range[1]} de ${total} pagos`,
         pageSizeOptions: ['10', '20', '50', '100'],
-        defaultPageSize: 20,
+        onChange: onPageChange,
+        onShowSizeChange: onPageChange,
       }}
       rowClassName={(record) => (record.deleted ? 'table-row-deleted' : '')}
     />

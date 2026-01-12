@@ -1,9 +1,15 @@
 import api from './baseApi'
-import { UsuarioFormData, FetchUsuariosParams } from '../types'
+import {
+  UsuarioFormData,
+  FetchUsuariosParams,
+  PaginatedUsuariosResponse,
+} from '../types'
 
 // Servicios de usuarios
 export const usuariosAPI = {
-  getAll: async (params?: FetchUsuariosParams) => {
+  getAll: async (
+    params?: FetchUsuariosParams
+  ): Promise<PaginatedUsuariosResponse> => {
     const response = await api.get('/usuarios', { params })
     return response.data
   },

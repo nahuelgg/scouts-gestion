@@ -1,5 +1,14 @@
-import React, { useEffect, useMemo } from 'react'
-import { Card, Row, Col, Typography, Space, Button, Statistic, message } from 'antd'
+import React, { useEffect, useMemo, useCallback } from 'react'
+import {
+  Card,
+  Row,
+  Col,
+  Typography,
+  Space,
+  Button,
+  Statistic,
+  message,
+} from 'antd'
 import { PlusOutlined, UserOutlined } from '@ant-design/icons'
 import { useAppDispatch, useAppSelector } from '../utils/hooks'
 import { clearError } from '../store/personasSlice'
@@ -13,7 +22,10 @@ import { useSociosActions } from '../hooks/useSociosActions'
 // Componentes especializados
 import { SociosFiltersComponent } from '../components/Socios/SociosFilters'
 import { SociosTable } from '../components/Socios/SociosTable'
-import { DeleteSocioModal, RestoreSocioModal } from '../components/Socios/SociosModals'
+import {
+  DeleteSocioModal,
+  RestoreSocioModal,
+} from '../components/Socios/SociosModals'
 
 // Utils
 import { isPersonaMayor } from '../utils/socios/display'
@@ -24,20 +36,31 @@ const SociosList: React.FC = () => {
   const dispatch = useAppDispatch()
 
   // Redux state
-  const { personas, isLoading, error } = useAppSelector((state) => state.personas)
+  const { personas, isLoading, error, total } = useAppSelector(
+    (state) => state.personas
+  )
   const { user } = useAppSelector((state) => state.auth)
 
   // Hooks customizados
-  const { filters, filteredPersonas, updateFilters, clearFilters, hasFullAccess } = useSociosFilters(personas, user)
   const permissions = useSociosPermissions(user)
   const actions = useSociosActions()
+  const { filters, updateFilters, clearFilters, hasFullAccess, isJefeDeRama } =
+    useSociosFilters(user)
 
-  // Estadísticas calculadas
+  // Estadísticas calculadas (ahora basadas en el total del servidor)
   const statistics = useMemo(() => {
-    const sociosActivos = filteredPersonas.filter(persona => !persona.deleted && persona.activo)
-    const sociosInactivos = filteredPersonas.filter(persona => !persona.deleted && !persona.activo)
-    const mayoresDeEdad = filteredPersonas.filter(persona => !persona.deleted && isPersonaMayor(persona))
-    const educadores = filteredPersonas.filter(persona => !persona.deleted && persona.funcion === 'educador')
+    const sociosActivos = personas.filter(
+      (persona) => !persona.deleted && persona.activo
+    )
+    const sociosInactivos = personas.filter(
+      (persona) => !persona.activo || persona.deleted
+    )
+    const mayoresDeEdad = personas.filter(
+      (persona) => !persona.deleted && isPersonaMayor(persona)
+    )
+    const educadores = personas.filter(
+      (persona) => !persona.deleted && persona.funcion === 'educador'
+    )
 
     return {
       totalSocios: sociosActivos.length,
@@ -45,13 +68,23 @@ const SociosList: React.FC = () => {
       mayoresDeEdad: mayoresDeEdad.length,
       educadores: educadores.length,
     }
-  }, [filteredPersonas])
+  }, [personas])
 
   // Efectos
   useEffect(() => {
     actions.loadRamas()
-    actions.loadPersonas()
   }, [])
+
+  useEffect(() => {
+    actions.loadPersonas({
+      page: 1, // Resetear a página 1 cuando cambian los filtros
+      search: filters.searchText,
+      rama: filters.selectedRama,
+      funcion: filters.selectedFuncion,
+      activo: filters.selectedEstado ? filters.selectedEstado === 'true' : undefined,
+      es_mayor: filters.showOnlyMayores || undefined,
+    })
+  }, [filters])
 
   useEffect(() => {
     if (error) {
@@ -118,12 +151,17 @@ const SociosList: React.FC = () => {
           onClearFilters={clearFilters}
           ramas={actions.ramas}
           hasFullAccess={hasFullAccess}
+          isJefeDeRama={isJefeDeRama}
         />
 
         {/* Tabla */}
         <SociosTable
-          personas={filteredPersonas}
+          personas={personas}
           loading={isLoading}
+          currentPage={actions.currentPage}
+          pageSize={actions.pageSize}
+          total={actions.total}
+          onPageChange={actions.handlePageChange}
           canDeletePersona={permissions.canDeletePersona}
           canEditPersona={permissions.canEditPersona}
           canManagePersona={permissions.canManagePersona}

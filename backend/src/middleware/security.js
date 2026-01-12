@@ -44,9 +44,13 @@ const createHelmetMiddleware = (config) => {
  * @returns {Function} Middleware de rate limiting
  */
 const createRateLimitMiddleware = (config) => {
+  // En desarrollo, ser mucho más permisivo
+  const isDevelopment = process.env.NODE_ENV !== 'production'
+  const maxRequests = isDevelopment ? 10000 : config.RATE_LIMIT_MAX || 100
+
   const limiter = rateLimit({
     windowMs: config.RATE_LIMIT_WINDOW || 15 * 60 * 1000, // 15 minutos por defecto
-    max: config.RATE_LIMIT_MAX || 100, // 100 requests por defecto
+    max: maxRequests, // Muy permisivo en desarrollo
     message: {
       success: false,
       message:
@@ -55,6 +59,9 @@ const createRateLimitMiddleware = (config) => {
     standardHeaders: true, // Retorna rate limit info en headers `RateLimit-*`
     legacyHeaders: false, // Desactiva headers `X-RateLimit-*`
     skip: (req) => {
+      // En desarrollo, skip rate limiting completamente
+      if (isDevelopment) return true
+
       // Skip rate limiting para health checks
       return req.path === '/api/health'
     },
@@ -84,15 +91,21 @@ const createRateLimitMiddleware = (config) => {
  * @returns {Function} Middleware de rate limiting para auth
  */
 const createAuthRateLimitMiddleware = (config) => {
+  const isDevelopment = process.env.NODE_ENV !== 'production'
+
   const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutos
-    max: 5, // Solo 5 intentos de login por IP cada 15 minutos
+    max: isDevelopment ? 1000 : 5, // Permisivo en desarrollo, 5 en producción
     message: {
       success: false,
       message: 'Demasiados intentos de login. Intenta de nuevo en 15 minutos.',
     },
     standardHeaders: true,
     legacyHeaders: false,
+    skip: (req) => {
+      // En desarrollo, skip rate limiting
+      return isDevelopment
+    },
     handler: (req, res) => {
       logger.warn('Rate limit de autenticación excedido', {
         ip: req.ip,
@@ -124,6 +137,17 @@ const createCorsMiddleware = (config) => {
       // Permitir requests sin origin (mobile apps, postman, etc.)
       if (!origin) return callback(null, true)
 
+      // En desarrollo, ser más permisivo
+      if (process.env.NODE_ENV !== 'production') {
+        // Permitir localhost en cualquier puerto
+        if (
+          origin.startsWith('http://localhost') ||
+          origin.startsWith('http://127.0.0.1')
+        ) {
+          return callback(null, true)
+        }
+      }
+
       const allowedOrigins =
         process.env.NODE_ENV === 'production'
           ? config.PRODUCTION_ORIGINS
@@ -138,7 +162,13 @@ const createCorsMiddleware = (config) => {
           nodeEnv: process.env.NODE_ENV,
         })
 
-        callback(new Error('No permitido por CORS'), false)
+        // En desarrollo, permitir de todos modos pero loguear
+        if (process.env.NODE_ENV !== 'production') {
+          logger.debug('Permitiendo origin en desarrollo:', origin)
+          callback(null, true)
+        } else {
+          callback(new Error('No permitido por CORS'), false)
+        }
       }
     },
     credentials: true,

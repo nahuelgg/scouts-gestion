@@ -1,23 +1,36 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { message } from 'antd'
-import { useAppDispatch } from '../utils/hooks'
+import { useAppDispatch, useAppSelector } from '../utils/hooks'
 import { deletePago, restorePago, fetchPagos } from '../store/pagosSlice'
-import { Pago } from '../types'
+import { Pago, FetchPagosParams } from '../types'
 
 export const usePagosActions = () => {
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
+  const { currentPage, totalPages, total } = useAppSelector(
+    (state) => state.pagos
+  )
 
   const [deleteModalVisible, setDeleteModalVisible] = useState(false)
   const [pagoToDelete, setPagoToDelete] = useState<Pago | null>(null)
   const [restoreModalVisible, setRestoreModalVisible] = useState(false)
   const [pagoToRestore, setPagoToRestore] = useState<Pago | null>(null)
   const [actionLoading, setActionLoading] = useState(false)
+  const [pageSize, setPageSize] = useState(20)
 
-  const loadPagos = () => {
-    dispatch(fetchPagos({ includeDeleted: true }))
-  }
+  const loadPagos = useCallback(
+    (params: FetchPagosParams = {}) => {
+      const paginationParams: FetchPagosParams = {
+        page: params.page || currentPage,
+        limit: params.limit || pageSize,
+        includeDeleted: true,
+        ...params,
+      }
+      dispatch(fetchPagos(paginationParams))
+    },
+    [dispatch, currentPage, pageSize]
+  )
 
   const handleView = (pago: Pago) => {
     navigate(`/pagos/${pago._id}`)
@@ -43,7 +56,6 @@ export const usePagosActions = () => {
       setPagoToDelete(null)
       loadPagos()
     } catch (error) {
-      console.error('Error eliminando pago:', error)
       message.error('Error eliminando pago')
     } finally {
       setActionLoading(false)
@@ -71,7 +83,6 @@ export const usePagosActions = () => {
       setPagoToRestore(null)
       loadPagos()
     } catch (error) {
-      console.error('Error restaurando pago:', error)
       message.error('Error restaurando pago')
     } finally {
       setActionLoading(false)
@@ -87,6 +98,15 @@ export const usePagosActions = () => {
     navigate('/pagos/nuevo')
   }
 
+  const handlePageChange = (page: number, newPageSize?: number) => {
+    if (newPageSize && newPageSize !== pageSize) {
+      setPageSize(newPageSize)
+      loadPagos({ page: 1, limit: newPageSize })
+    } else {
+      loadPagos({ page, limit: pageSize })
+    }
+  }
+
   return {
     // State
     deleteModalVisible,
@@ -94,6 +114,10 @@ export const usePagosActions = () => {
     restoreModalVisible,
     pagoToRestore,
     actionLoading,
+    currentPage,
+    pageSize,
+    totalPages,
+    total,
 
     // Actions
     loadPagos,
@@ -106,5 +130,6 @@ export const usePagosActions = () => {
     handleConfirmRestore,
     handleCancelRestore,
     handleCreateNew,
+    handlePageChange,
   }
 }

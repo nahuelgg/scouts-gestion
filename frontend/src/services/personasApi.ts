@@ -1,9 +1,15 @@
 import api from './baseApi'
-import { PersonaFormData, FetchPersonasParams } from '../types'
+import {
+  PersonaFormData,
+  FetchPersonasParams,
+  PaginatedPersonasResponse,
+} from '../types'
 
 // Servicios de personas
 export const personasAPI = {
-  getAll: async (params?: FetchPersonasParams) => {
+  getAll: async (
+    params?: FetchPersonasParams
+  ): Promise<PaginatedPersonasResponse> => {
     const response = await api.get('/personas', { params })
     return response.data
   },
