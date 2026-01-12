@@ -20,7 +20,7 @@ const getMonitoringStats = async (req, res) => {
 
 const getAlerts = async (req, res) => {
   try {
-    const limit = parseInt(req.query.limit) || 50
+    const limit = Math.min(parseInt(req.query.limit) || 50, 100)
     const level = req.query.level
 
     const alerts = alertService.getAlertHistory(limit, level)

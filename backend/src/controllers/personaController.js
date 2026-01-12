@@ -16,7 +16,7 @@ const getPersonas = async (req, res) => {
   try {
     const {
       page = 1,
-      limit = 10,
+      limit: requestedLimit = 10,
       search = '',
       rama = '',
       funcion = '',
@@ -25,6 +25,8 @@ const getPersonas = async (req, res) => {
       includeDeleted = true,
       withoutUser = false,
     } = req.query
+
+    const limit = Math.min(parseInt(requestedLimit) || 10, 100)
 
     // Construir filtros
     let filter = {}

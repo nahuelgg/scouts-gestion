@@ -6,12 +6,14 @@ const getUsuarios = async (req, res) => {
   try {
     const {
       page = 1,
-      limit = 10,
+      limit: requestedLimit = 10,
       rol,
       activo,
       search,
       includeDeleted = true,
     } = req.query
+
+    const limit = Math.min(parseInt(requestedLimit) || 10, 100)
 
     let filter = {}
 

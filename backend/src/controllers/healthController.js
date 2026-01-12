@@ -75,7 +75,7 @@ const getReadiness = async (req, res) => {
 
 const getHealthHistory = async (req, res) => {
   try {
-    const limit = parseInt(req.query.limit) || 20
+    const limit = Math.min(parseInt(req.query.limit) || 20, 100)
     const history = healthCheckService.getHealthHistory(limit)
 
     res.json({
