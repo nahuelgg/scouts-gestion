@@ -13,8 +13,6 @@ import { Persona, Rama, FetchPersonasParams } from '../types'
 export const useSociosActions = () => {
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
-
-  // Obtener estado de paginación del store
   const { currentPage, totalPages, total } = useAppSelector(
     (state) => state.personas
   )
@@ -47,7 +45,6 @@ export const useSociosActions = () => {
       const response = await ramasAPI.getAll()
       setRamas(response)
     } catch (error) {
-      console.error('Error cargando ramas:', error)
       message.error('Error cargando ramas')
     } finally {
       setRamasLoading(false)
@@ -76,10 +73,8 @@ export const useSociosActions = () => {
       message.success('Socio eliminado exitosamente')
       setDeleteModalVisible(false)
       setPersonaToDelete(null)
-      // Recargar la lista
       loadPersonas()
     } catch (error) {
-      console.error('Error eliminando socio:', error)
       message.error('Error eliminando socio')
     } finally {
       setActionLoading(false)
@@ -105,10 +100,8 @@ export const useSociosActions = () => {
       message.success('Socio restaurado exitosamente')
       setRestoreModalVisible(false)
       setPersonaToRestore(null)
-      // Recargar la lista
       loadPersonas()
     } catch (error) {
-      console.error('Error restaurando socio:', error)
       message.error('Error restaurando socio')
     } finally {
       setActionLoading(false)

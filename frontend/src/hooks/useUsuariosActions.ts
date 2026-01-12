@@ -13,8 +13,6 @@ import { User, FetchUsuariosParams, Rol } from '../types'
 export const useUsuariosActions = () => {
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
-
-  // Obtener estado de paginación del store
   const { currentPage, totalPages, total } = useAppSelector(
     (state) => state.usuarios
   )
@@ -61,10 +59,8 @@ export const useUsuariosActions = () => {
       message.success('Usuario eliminado exitosamente')
       setDeleteModalVisible(false)
       setUserToDelete(null)
-      // Recargar la lista
       loadUsuarios()
     } catch (error) {
-      console.error('Error eliminando usuario:', error)
       message.error('Error eliminando usuario')
     } finally {
       setActionLoading(false)
@@ -90,10 +86,8 @@ export const useUsuariosActions = () => {
       message.success('Usuario restaurado exitosamente')
       setRestoreModalVisible(false)
       setUserToRestore(null)
-      // Recargar la lista
       loadUsuarios()
     } catch (error) {
-      console.error('Error restaurando usuario:', error)
       message.error('Error restaurando usuario')
     } finally {
       setActionLoading(false)
@@ -131,7 +125,6 @@ export const useUsuariosActions = () => {
       const response = await rolesAPI.getAll()
       setRoles(response)
     } catch (error) {
-      console.error('Error cargando roles:', error)
       message.error('Error cargando roles')
     } finally {
       setRolesLoading(false)

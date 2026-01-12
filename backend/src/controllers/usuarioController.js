@@ -2,9 +2,6 @@ const Usuario = require('../models/Usuario')
 const Persona = require('../models/Persona')
 const bcrypt = require('bcryptjs')
 
-// @desc    Obtener todos los usuarios
-// @route   GET /api/usuarios
-// @access  Private (administrador, jefe de grupo)
 const getUsuarios = async (req, res) => {
   try {
     const {
@@ -75,14 +72,10 @@ const getUsuarios = async (req, res) => {
       total,
     })
   } catch (error) {
-    console.error(error)
     res.status(500).json({ message: 'Error del servidor' })
   }
 }
 
-// @desc    Obtener un usuario por ID
-// @route   GET /api/usuarios/:id
-// @access  Private (administrador, jefe de grupo)
 const getUsuarioById = async (req, res) => {
   try {
     const { id } = req.params
@@ -106,35 +99,25 @@ const getUsuarioById = async (req, res) => {
 
     res.json(usuario)
   } catch (error) {
-    console.error(error)
     res.status(500).json({ message: 'Error del servidor' })
   }
 }
 
-// @desc    Crear nuevo usuario
-// @route   POST /api/usuarios
-// @access  Private (administrador, jefe de grupo)
 const createUsuario = async (req, res) => {
   try {
     const { username, password, persona, rol, activo = true } = req.body
-
-    // Verificar si el username ya existe
     const existingUser = await Usuario.findOne({ username })
     if (existingUser) {
       return res.status(400).json({
         message: 'El nombre de usuario ya está en uso',
       })
     }
-
-    // Verificar si la persona ya tiene un usuario
     const existingPersonaUser = await Usuario.findOne({ persona })
     if (existingPersonaUser) {
       return res.status(400).json({
         message: 'Esta persona ya tiene un usuario asociado',
       })
     }
-
-    // Crear usuario (el middleware se encargará del hash de la contraseña)
     const usuario = new Usuario({
       username,
       password, // Sin hashear, el middleware lo hará
@@ -144,8 +127,6 @@ const createUsuario = async (req, res) => {
     })
 
     await usuario.save()
-
-    // Obtener el usuario con datos poblados
     const usuarioCompleto = await Usuario.findById(usuario._id)
       .populate('persona', 'nombre apellido dni')
       .populate('rol', 'nombre descripcion')
@@ -155,14 +136,10 @@ const createUsuario = async (req, res) => {
       usuario: usuarioCompleto,
     })
   } catch (error) {
-    console.error(error)
     res.status(500).json({ message: 'Error del servidor' })
   }
 }
 
-// @desc    Actualizar usuario
-// @route   PUT /api/usuarios/:id
-// @access  Private (administrador, jefe de grupo)
 const updateUsuario = async (req, res) => {
   try {
     const { id } = req.params
@@ -172,8 +149,6 @@ const updateUsuario = async (req, res) => {
     if (!usuario) {
       return res.status(404).json({ message: 'Usuario no encontrado' })
     }
-
-    // Verificar username único (excluyendo el usuario actual)
     if (username && username !== usuario.username) {
       const existingUser = await Usuario.findOne({
         username,
@@ -185,8 +160,6 @@ const updateUsuario = async (req, res) => {
         })
       }
     }
-
-    // Verificar persona única (excluyendo el usuario actual)
     if (persona && persona !== usuario.persona.toString()) {
       const existingPersonaUser = await Usuario.findOne({
         persona,
@@ -198,8 +171,6 @@ const updateUsuario = async (req, res) => {
         })
       }
     }
-
-    // Actualizar campos
     if (username) usuario.username = username
     if (persona) usuario.persona = persona
     if (rol) usuario.rol = rol
@@ -211,8 +182,6 @@ const updateUsuario = async (req, res) => {
     }
 
     await usuario.save()
-
-    // Obtener usuario actualizado con datos poblados
     const usuarioActualizado = await Usuario.findById(id)
       .populate('persona', 'nombre apellido dni')
       .populate('rol', 'nombre descripcion')
@@ -222,14 +191,10 @@ const updateUsuario = async (req, res) => {
       usuario: usuarioActualizado,
     })
   } catch (error) {
-    console.error(error)
     res.status(500).json({ message: 'Error del servidor' })
   }
 }
 
-// @desc    Desactivar usuario (soft delete)
-// @route   DELETE /api/usuarios/:id
-// @access  Private (administrador, jefe de grupo)
 const deleteUsuario = async (req, res) => {
   try {
     const { id } = req.params
@@ -242,8 +207,6 @@ const deleteUsuario = async (req, res) => {
     if (usuario.deleted) {
       return res.status(400).json({ message: 'El usuario ya está eliminado' })
     }
-
-    // Validar que no se elimine a sí mismo
     if (usuario._id.toString() === req.user._id.toString()) {
       return res.status(400).json({
         message: 'No puedes eliminar tu propio usuario',
@@ -259,8 +222,6 @@ const deleteUsuario = async (req, res) => {
         message: 'No tienes permisos para eliminar administradores',
       })
     }
-
-    // Verificar que no sea el último administrador
     if (usuario.rol.nombre === 'administrador') {
       const adminCount = await Usuario.countDocuments({
         rol: usuario.rol._id,
@@ -281,8 +242,6 @@ const deleteUsuario = async (req, res) => {
     usuario.activo = false
 
     await usuario.save()
-
-    // Obtener el usuario actualizado con datos poblados
     const usuarioEliminado = await Usuario.findById(id)
       .populate({
         path: 'persona',
@@ -299,14 +258,10 @@ const deleteUsuario = async (req, res) => {
       usuario: usuarioEliminado,
     })
   } catch (error) {
-    console.error(error)
     res.status(500).json({ message: 'Error del servidor' })
   }
 }
 
-// @desc    Restaurar usuario eliminado
-// @route   PATCH /api/usuarios/:id/restore
-// @access  Private (administrador)
 const restoreUsuario = async (req, res) => {
   try {
     const usuario = await Usuario.findById(req.params.id)
@@ -318,8 +273,6 @@ const restoreUsuario = async (req, res) => {
     if (!usuario.deleted) {
       return res.status(400).json({ message: 'El usuario no está eliminado' })
     }
-
-    // Verificar que el username no esté siendo usado por otro usuario activo
     const usernameExistente = await Usuario.findOne({
       username: usuario.username,
       _id: { $ne: req.params.id },
@@ -355,7 +308,6 @@ const restoreUsuario = async (req, res) => {
       usuario: usuarioRestaurado,
     })
   } catch (error) {
-    console.error(error)
     res.status(500).json({ message: 'Error del servidor' })
   }
 }

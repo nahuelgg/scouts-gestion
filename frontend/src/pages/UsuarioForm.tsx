@@ -134,7 +134,6 @@ const UsuarioForm: React.FC = () => {
       setRoles(response.roles || response)
     } catch (error) {
       message.error('Error cargando roles')
-      console.error('Error cargando roles:', error)
     } finally {
       setLoadingRoles(false)
     }

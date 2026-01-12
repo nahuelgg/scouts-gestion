@@ -4,10 +4,6 @@ const fs = require('fs').promises
 const path = require('path')
 const logger = require('../../utils/logger')
 
-/**
- * Servicio de Health Checks Avanzados
- * Verifica estado de todos los componentes críticos del sistema
- */
 class HealthCheckService {
   constructor() {
     this.startTime = Date.now()
@@ -15,9 +11,6 @@ class HealthCheckService {
     this.maxHistorySize = 100
   }
 
-  /**
-   * Ejecuta todos los health checks
-   */
   async getSystemHealth() {
     const healthCheck = {
       timestamp: new Date().toISOString(),
@@ -58,9 +51,6 @@ class HealthCheckService {
     }
   }
 
-  /**
-   * Verifica la conexión y rendimiento de MongoDB
-   */
   async checkDatabase() {
     const dbCheck = {
       status: 'healthy',
@@ -81,8 +71,6 @@ class HealthCheckService {
       // Test de rendimiento - ping simple
       await mongoose.connection.db.admin().ping()
       dbCheck.responseTime = Date.now() - startTime
-
-      // Información de colecciones
       const collections = await mongoose.connection.db
         .listCollections()
         .toArray()
@@ -98,8 +86,6 @@ class HealthCheckService {
         totalIndexes += indexes.length
       }
       dbCheck.indexes = totalIndexes
-
-      // Verificar performance
       if (dbCheck.responseTime > 1000) {
         dbCheck.status = 'warning'
         dbCheck.warning = 'MongoDB response time alto'
@@ -113,9 +99,6 @@ class HealthCheckService {
     }
   }
 
-  /**
-   * Verifica recursos del sistema
-   */
   async checkSystemResources() {
     const systemCheck = {
       status: 'healthy',
@@ -167,8 +150,6 @@ class HealthCheckService {
         external: Math.round(memUsage.external / 1024 / 1024), // MB
         uptime: Math.round(process.uptime()),
       }
-
-      // Verificar recursos críticos
       if (memUsagePercent > 90) {
         systemCheck.status = 'critical'
         systemCheck.error = 'Memoria del sistema crítica'
@@ -176,8 +157,6 @@ class HealthCheckService {
         systemCheck.status = 'warning'
         systemCheck.warning = 'Uso de memoria alto'
       }
-
-      // Verificar espacio en disco
       try {
         const uploadDir = path.join(process.cwd(), 'uploads')
         const stats = await fs.stat(uploadDir)
@@ -195,9 +174,6 @@ class HealthCheckService {
     }
   }
 
-  /**
-   * Verifica integridad del sistema de archivos
-   */
   async checkFileSystem() {
     const fileCheck = {
       status: 'healthy',
@@ -209,8 +185,6 @@ class HealthCheckService {
 
     try {
       const uploadDir = path.join(process.cwd(), 'uploads')
-
-      // Verificar que existe el directorio
       try {
         const stats = await fs.stat(uploadDir)
         fileCheck.uploadDir = stats.isDirectory() ? 'exists' : 'not_directory'
@@ -220,8 +194,6 @@ class HealthCheckService {
         fileCheck.warning = 'Directorio uploads no existe'
         return fileCheck
       }
-
-      // Verificar permisos de escritura
       try {
         const testFile = path.join(uploadDir, '.health_check_test')
         await fs.writeFile(testFile, 'test')
@@ -251,8 +223,6 @@ class HealthCheckService {
       }
 
       fileCheck.totalSize = Math.round(totalSize / 1024 / 1024) // MB
-
-      // Verificar límites
       if (fileCheck.totalSize > 1000) {
         // 1GB
         fileCheck.status = 'warning'
@@ -267,9 +237,6 @@ class HealthCheckService {
     }
   }
 
-  /**
-   * Verifica servicios externos (si los hay)
-   */
   async checkExternalServices() {
     const externalCheck = {
       status: 'healthy',
@@ -294,9 +261,6 @@ class HealthCheckService {
     }
   }
 
-  /**
-   * Obtiene todos los archivos recursivamente
-   */
   async getAllFiles(dir) {
     const files = []
 
@@ -321,9 +285,6 @@ class HealthCheckService {
     return files
   }
 
-  /**
-   * Procesa el resultado de un check individual
-   */
   processCheckResult(result) {
     if (result.status === 'fulfilled') {
       return result.value
@@ -335,9 +296,6 @@ class HealthCheckService {
     }
   }
 
-  /**
-   * Calcula el estado general del sistema
-   */
   calculateOverallHealth(checks) {
     const statuses = Object.values(checks).map((check) => check.status)
 
@@ -350,9 +308,6 @@ class HealthCheckService {
     }
   }
 
-  /**
-   * Obtiene el uptime formateado
-   */
   getUptime() {
     const uptimeMs = Date.now() - this.startTime
     const uptimeSeconds = Math.floor(uptimeMs / 1000)
@@ -364,9 +319,6 @@ class HealthCheckService {
     return `${hours}h ${minutes}m ${seconds}s`
   }
 
-  /**
-   * Guarda el resultado en el historial
-   */
   saveToHistory(healthCheck) {
     this.healthHistory.unshift({
       timestamp: healthCheck.timestamp,
@@ -380,16 +332,10 @@ class HealthCheckService {
     }
   }
 
-  /**
-   * Obtiene el historial de health checks
-   */
   getHealthHistory(limit = 10) {
     return this.healthHistory.slice(0, limit)
   }
 
-  /**
-   * Check rápido solo para liveness probe
-   */
   async getQuickHealth() {
     try {
       // Solo verificar lo esencial

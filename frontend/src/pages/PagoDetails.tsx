@@ -40,8 +40,6 @@ const PagoDetails: React.FC = () => {
     (state) => state.pagos
   )
   const { user } = useAppSelector((state) => state.auth)
-
-  // Verificar permisos del usuario
   const userRole = user?.rol?.nombre
   const userPersonaId = user?.persona?._id
   const userRamaId = user?.persona?.rama?._id
@@ -51,8 +49,6 @@ const PagoDetails: React.FC = () => {
   const canManageRama = userRole === 'jefe de rama'
   const isOwnerPago = currentPago?.socio?._id === userPersonaId
   const isFromUserRama = currentPago?.socio?.rama?._id === userRamaId
-
-  // Verificar si puede editar este pago específico
   const canEditThisPago = canManageAll || (canManageRama && isFromUserRama)
 
   useEffect(() => {

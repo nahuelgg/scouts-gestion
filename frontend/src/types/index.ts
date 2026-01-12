@@ -242,9 +242,7 @@ export interface ApiError {
   message?: string
 }
 
-// =============================================================================
 // INTERFACES PARA ELIMINAR TIPOS 'any'
-// =============================================================================
 
 // Interfaces para componentes de tabla (Ant Design)
 export interface TableColumnRenderProps<T = unknown> {

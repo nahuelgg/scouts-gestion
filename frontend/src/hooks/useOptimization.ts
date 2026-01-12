@@ -1,8 +1,5 @@
 import { useCallback, useMemo, useRef, useEffect, useState } from 'react'
 
-/**
- * Hook para memorizar valores complejos
- */
 export const useStableMemo = <T>(
   factory: () => T,
   deps: React.DependencyList
@@ -10,9 +7,6 @@ export const useStableMemo = <T>(
   return useMemo(factory, deps)
 }
 
-/**
- * Hook para callbacks estables
- */
 export const useStableCallback = <T extends (...args: any[]) => any>(
   callback: T,
   deps: React.DependencyList
@@ -20,9 +14,6 @@ export const useStableCallback = <T extends (...args: any[]) => any>(
   return useCallback(callback, deps)
 }
 
-/**
- * Hook para prevenir renders innecesarios con valores profundos
- */
 export const useDeepMemo = <T>(value: T, deps: React.DependencyList): T => {
   const ref = useRef<T>(value)
 
@@ -35,9 +26,6 @@ export const useDeepMemo = <T>(value: T, deps: React.DependencyList): T => {
   }, deps)
 }
 
-/**
- * Hook para debounce de valores
- */
 export const useDebounce = <T>(value: T, delay: number): T => {
   const [debouncedValue, setDebouncedValue] = useState<T>(value)
 
@@ -54,9 +42,6 @@ export const useDebounce = <T>(value: T, delay: number): T => {
   return debouncedValue
 }
 
-/**
- * Hook para optimizar listas grandes
- */
 export const useVirtualization = <T>(
   items: T[],
   itemHeight: number,
@@ -91,9 +76,6 @@ export const useVirtualization = <T>(
   }
 }
 
-/**
- * Hook para lazy loading de imágenes
- */
 export const useLazyImage = (src: string) => {
   const [imageSrc, setImageSrc] = useState<string>()
   const [isLoaded, setIsLoaded] = useState(false)
@@ -128,9 +110,6 @@ export const useLazyImage = (src: string) => {
   return { imageRef, imageSrc, isLoaded, onLoad }
 }
 
-/**
- * Hook para caché de API calls
- */
 export const useApiCache = <T>(
   key: string,
   fetcher: () => Promise<T>,
@@ -144,8 +123,6 @@ export const useApiCache = <T>(
   const fetchData = useCallback(async () => {
     const cache = cacheRef.current
     const cached = cache.get(key)
-
-    // Verificar si hay datos en caché válidos
     if (cached && Date.now() - cached.timestamp < ttl) {
       setData(cached.data)
       return cached.data

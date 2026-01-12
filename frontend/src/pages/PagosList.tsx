@@ -83,8 +83,6 @@ const PagosList: React.FC = () => {
       dispatch(clearError())
     }
   }, [error, dispatch])
-
-  // Validar permisos para mostrar acciones
   const handleDelete = (pago: Pago) => {
     if (!permissions.canDeletePago(pago)) {
       message.error('No tienes permisos para eliminar este pago')

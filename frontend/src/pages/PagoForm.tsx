@@ -60,8 +60,6 @@ const PagoForm: React.FC = () => {
   const [fileList, setFileList] = useState<UploadFile[]>([])
 
   const isEditing = !!id
-
-  // Verificar permisos del usuario
   const userRole = user?.rol?.nombre
   const canOnlyView = userRole === 'socio' || !userRole
 
@@ -342,8 +340,6 @@ const PagoForm: React.FC = () => {
                           new Error('El monto no puede exceder 99,999,999.99')
                         )
                       }
-
-                      // Verificar que no tenga más de 2 decimales
                       const decimalPart = normalizedValue.split('.')[1]
                       if (decimalPart && decimalPart.length > 2) {
                         return Promise.reject(
@@ -388,8 +384,6 @@ const PagoForm: React.FC = () => {
                         value = beforeSeparator + '.' + afterSeparator
                       }
                     }
-
-                    // Actualizar el valor en el formulario
                     e.target.value = value
                   }}
                 />

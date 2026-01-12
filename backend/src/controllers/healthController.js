@@ -1,11 +1,6 @@
 const healthCheckService = require('../services/health/HealthCheckService')
 const logger = require('../utils/logger')
 
-/**
- * @desc    Health check completo del sistema
- * @route   GET /api/health
- * @access  Public (aunque puede ser privado en producción)
- */
 const getFullHealth = async (req, res) => {
   try {
     const health = await healthCheckService.getSystemHealth()
@@ -40,11 +35,6 @@ const getFullHealth = async (req, res) => {
   }
 }
 
-/**
- * @desc    Health check rápido (liveness probe)
- * @route   GET /api/health/live
- * @access  Public
- */
 const getLiveness = async (req, res) => {
   try {
     const health = await healthCheckService.getQuickHealth()
@@ -60,11 +50,6 @@ const getLiveness = async (req, res) => {
   }
 }
 
-/**
- * @desc    Health check de preparación (readiness probe)
- * @route   GET /api/health/ready
- * @access  Public
- */
 const getReadiness = async (req, res) => {
   try {
     const health = await healthCheckService.getSystemHealth()
@@ -88,11 +73,6 @@ const getReadiness = async (req, res) => {
   }
 }
 
-/**
- * @desc    Historial de health checks
- * @route   GET /api/health/history
- * @access  Private (requiere autenticación)
- */
 const getHealthHistory = async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 20
@@ -112,11 +92,6 @@ const getHealthHistory = async (req, res) => {
   }
 }
 
-/**
- * @desc    Métricas básicas del sistema
- * @route   GET /api/health/metrics
- * @access  Private (requiere autenticación)
- */
 const getMetrics = async (req, res) => {
   try {
     const health = await healthCheckService.getSystemHealth()

@@ -65,10 +65,7 @@ const ChangePassword: React.FC = () => {
 
   const handleSubmit = async (values: ChangePasswordData) => {
     try {
-      // Limpiar errores anteriores
       dispatch(clearError())
-
-      // Validar que las contraseñas coincidan
       if (values.newPassword !== values.confirmPassword) {
         message.error('Las contraseñas no coinciden')
         return
@@ -92,7 +89,6 @@ const ChangePassword: React.FC = () => {
         navigate('/')
       }, 2000)
     } catch (error) {
-      console.error('Error cambiando contraseña:', error)
       message.error(error as string)
     }
   }

@@ -1,25 +1,6 @@
 const Persona = require('../models/Persona')
 const Rama = require('../models/Rama')
 
-/**
- * Validadores de Negocio para Entidad Persona
- * Responsabilidad única: Validaciones de reglas de negocio específicas de Persona
- *
- * Funcionalidades:
- * - Validación de unicidad de DNI
- * - Validación de existencia de Rama
- * - Validación de campos requeridos de negocio
- *
- * @author Sistema de Gestión Scouts
- * @version 2.0.0 (Movido desde utils/ siguiendo principios SOLID)
- */
-
-/**
- * Validar que un DNI no esté duplicado en el sistema
- * @param {string} dni - DNI a validar
- * @param {string} excludeId - ID a excluir de la búsqueda (para edición)
- * @returns {Promise<boolean>} - true si es válido, false si está duplicado
- */
 const validateUniqueDNI = async (dni, excludeId = null) => {
   const filter = { dni, deleted: false }
   if (excludeId) {
@@ -30,11 +11,6 @@ const validateUniqueDNI = async (dni, excludeId = null) => {
   return !existingPersona
 }
 
-/**
- * Validar que una rama existe y está activa
- * @param {string} ramaId - ID de la rama a validar
- * @returns {Promise<boolean>} - true si existe, false si no existe
- */
 const validateRamaExists = async (ramaId) => {
   if (!ramaId) return true // Si no se proporciona rama, es válido
 
@@ -42,11 +18,6 @@ const validateRamaExists = async (ramaId) => {
   return !!rama
 }
 
-/**
- * Validar campos requeridos para persona según reglas de negocio
- * @param {Object} data - Datos de la persona
- * @returns {Object} - { isValid: boolean, message: string }
- */
 const validateRequiredPersonaFields = (data) => {
   const { nombre, apellido, dni, direccion, telefono } = data
 
@@ -60,11 +31,6 @@ const validateRequiredPersonaFields = (data) => {
   return { isValid: true }
 }
 
-/**
- * Validar formato de DNI según reglas del negocio
- * @param {string} dni - DNI a validar
- * @returns {Object} - { isValid: boolean, message: string }
- */
 const validateDNIFormat = (dni) => {
   if (!dni || typeof dni !== 'string') {
     return {
@@ -75,8 +41,6 @@ const validateDNIFormat = (dni) => {
 
   // Remover espacios y puntos
   const cleanDNI = dni.replace(/[\s.-]/g, '')
-
-  // Validar longitud (7-8 dígitos)
   if (!/^\d{7,8}$/.test(cleanDNI)) {
     return {
       isValid: false,
@@ -87,11 +51,6 @@ const validateDNIFormat = (dni) => {
   return { isValid: true }
 }
 
-/**
- * Validar edad mínima para scouts
- * @param {Date} fechaNacimiento - Fecha de nacimiento
- * @returns {Object} - { isValid: boolean, message: string, age: number }
- */
 const validateMinimumAge = (fechaNacimiento) => {
   if (!fechaNacimiento) {
     return {

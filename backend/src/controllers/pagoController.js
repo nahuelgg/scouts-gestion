@@ -4,9 +4,6 @@ const logger = require('../utils/logger')
 const path = require('path')
 const fs = require('fs')
 
-// @desc    Obtener todos los pagos
-// @route   GET /api/pagos
-// @access  Private
 const getPagos = async (req, res) => {
   try {
     const {
@@ -97,14 +94,10 @@ const getPagos = async (req, res) => {
       total,
     })
   } catch (error) {
-    console.error(error)
     res.status(500).json({ message: 'Error del servidor' })
   }
 }
 
-// @desc    Obtener un pago por ID
-// @route   GET /api/pagos/:id
-// @access  Private
 const getPagoById = async (req, res) => {
   try {
     const pago = await Pago.findById(req.params.id)
@@ -138,14 +131,10 @@ const getPagoById = async (req, res) => {
 
     res.json(pago)
   } catch (error) {
-    console.error(error)
     res.status(500).json({ message: 'Error del servidor' })
   }
 }
 
-// @desc    Crear nuevo pago
-// @route   POST /api/pagos
-// @access  Private (jefe de rama, administrador)
 const createPago = async (req, res) => {
   try {
     const {
@@ -157,16 +146,12 @@ const createPago = async (req, res) => {
       tipoPago,
       observaciones,
     } = req.body
-
-    // Validar campos requeridos
     if (!socio || !monto || !mesCorrespondiente || !metodoPago || !tipoPago) {
       return res.status(400).json({
         message:
           'Socio, monto, mes correspondiente y método de pago son requeridos',
       })
     }
-
-    // Validar que el monto sea un número válido
     const montoNumerico = parseFloat(monto)
     if (
       isNaN(montoNumerico) ||
@@ -177,14 +162,10 @@ const createPago = async (req, res) => {
         message: 'El monto debe ser un número válido mayor a 0',
       })
     }
-
-    // Verificar que el socio existe
     const socioExistente = await Persona.findById(socio)
     if (!socioExistente) {
       return res.status(400).json({ message: 'Socio no encontrado' })
     }
-
-    // Crear objeto de pago
     const pagoData = {
       socio,
       monto: montoNumerico,
@@ -199,8 +180,6 @@ const createPago = async (req, res) => {
     // Si hay archivo de comprobante
     if (req.file) {
       const year = new Date().getFullYear()
-
-      // Información básica del archivo
       const comprobanteData = {
         filename: req.file.filename,
         originalName: req.file.originalname,
@@ -263,14 +242,10 @@ const createPago = async (req, res) => {
       pago: pagoCreado,
     })
   } catch (error) {
-    console.error(error)
     res.status(500).json({ message: 'Error del servidor' })
   }
 }
 
-// @desc    Actualizar pago
-// @route   PUT /api/pagos/:id
-// @access  Private (jefe de rama, administrador)
 const updatePago = async (req, res) => {
   try {
     const { monto, fechaPago, metodoPago, tipoPago, observaciones, estado } =
@@ -281,8 +256,6 @@ const updatePago = async (req, res) => {
     if (!pago) {
       return res.status(404).json({ message: 'Pago no encontrado' })
     }
-
-    // Actualizar campos
     if (monto) {
       const montoNumerico = parseFloat(monto)
       if (
@@ -307,7 +280,6 @@ const updatePago = async (req, res) => {
 
     // Si hay nuevo archivo de comprobante
     if (req.file) {
-      // Eliminar archivo anterior si existe
       if (pago.comprobante && pago.comprobante.path) {
         const oldFilePath = path.join(
           process.env.UPLOAD_PATH || './uploads',
@@ -319,8 +291,6 @@ const updatePago = async (req, res) => {
       }
 
       const year = new Date().getFullYear()
-
-      // Información básica del archivo
       const comprobanteData = {
         filename: req.file.filename,
         originalName: req.file.originalname,
@@ -392,14 +362,10 @@ const updatePago = async (req, res) => {
       pago: pagoActualizado,
     })
   } catch (error) {
-    console.error(error)
     res.status(500).json({ message: 'Error del servidor' })
   }
 }
 
-// @desc    Eliminar pago
-// @route   DELETE /api/pagos/:id
-// @access  Private (administrador)
 const deletePago = async (req, res) => {
   try {
     const pago = await Pago.findById(req.params.id)
@@ -418,8 +384,6 @@ const deletePago = async (req, res) => {
     pago.deletedBy = req.user._id
 
     await pago.save()
-
-    // Obtener el pago actualizado con datos poblados
     const pagoEliminado = await Pago.findById(req.params.id)
       .populate('socio', 'nombre apellido dni rama')
       .populate('registradoPor', 'username')
@@ -430,14 +394,10 @@ const deletePago = async (req, res) => {
       pago: pagoEliminado,
     })
   } catch (error) {
-    console.error(error)
     res.status(500).json({ message: 'Error del servidor' })
   }
 }
 
-// @desc    Restaurar pago eliminado
-// @route   PATCH /api/pagos/:id/restore
-// @access  Private (administrador)
 const restorePago = async (req, res) => {
   try {
     const pago = await Pago.findById(req.params.id)
@@ -456,8 +416,6 @@ const restorePago = async (req, res) => {
     pago.deletedBy = undefined
 
     await pago.save()
-
-    // Obtener el pago restaurado con datos poblados
     const pagoRestaurado = await Pago.findById(req.params.id)
       .populate('socio', 'nombre apellido dni rama')
       .populate('registradoPor', 'username')
@@ -467,14 +425,10 @@ const restorePago = async (req, res) => {
       pago: pagoRestaurado,
     })
   } catch (error) {
-    console.error(error)
     res.status(500).json({ message: 'Error del servidor' })
   }
 }
 
-// @desc    Obtener resumen de pagos por socio
-// @route   GET /api/pagos/resumen/:socioId
-// @access  Private
 const getResumenPagosSocio = async (req, res) => {
   try {
     const { socioId } = req.params
@@ -498,7 +452,6 @@ const getResumenPagosSocio = async (req, res) => {
       pagos,
     })
   } catch (error) {
-    console.error(error)
     res.status(500).json({ message: 'Error del servidor' })
   }
 }

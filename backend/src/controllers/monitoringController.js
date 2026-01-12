@@ -2,11 +2,6 @@ const monitoringService = require('../services/monitoring/MonitoringService')
 const alertService = require('../services/monitoring/AlertService')
 const logger = require('../utils/logger')
 
-/**
- * @desc    Obtener estadísticas de monitoreo
- * @route   GET /api/monitoring/stats
- * @access  Private
- */
 const getMonitoringStats = async (req, res) => {
   try {
     const stats = monitoringService.getStats()
@@ -23,11 +18,6 @@ const getMonitoringStats = async (req, res) => {
   }
 }
 
-/**
- * @desc    Obtener historial de alertas
- * @route   GET /api/monitoring/alerts
- * @access  Private
- */
 const getAlerts = async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 50
@@ -48,11 +38,6 @@ const getAlerts = async (req, res) => {
   }
 }
 
-/**
- * @desc    Forzar check de monitoreo
- * @route   POST /api/monitoring/check
- * @access  Private
- */
 const forceMonitoringCheck = async (req, res) => {
   try {
     await monitoringService.forceHealthCheck()
@@ -67,11 +52,6 @@ const forceMonitoringCheck = async (req, res) => {
   }
 }
 
-/**
- * @desc    Test de notificaciones
- * @route   POST /api/monitoring/test-notifications
- * @access  Private
- */
 const testNotifications = async (req, res) => {
   try {
     const results = await alertService.testNotifications()
@@ -87,11 +67,6 @@ const testNotifications = async (req, res) => {
   }
 }
 
-/**
- * @desc    Enviar alerta de test
- * @route   POST /api/monitoring/test-alert
- * @access  Private
- */
 const sendTestAlert = async (req, res) => {
   try {
     const { level = 'warning', title, message } = req.body
@@ -131,11 +106,6 @@ const sendTestAlert = async (req, res) => {
   }
 }
 
-/**
- * @desc    Configuración de monitoreo
- * @route   GET /api/monitoring/config
- * @access  Private
- */
 const getMonitoringConfig = async (req, res) => {
   try {
     const config = {

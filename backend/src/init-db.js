@@ -13,16 +13,12 @@ const initializeDatabase = async () => {
     const Rama = require('./models/Rama')
     const Persona = require('./models/Persona')
     const Usuario = require('./models/Usuario')
-
-    // Limpiar datos existentes (opcional)
-    console.log('Limpiando datos existentes...')
+    
     await Rol.deleteMany({})
     await Rama.deleteMany({})
     await Usuario.deleteMany({})
     await Persona.deleteMany({})
-
-    // Crear roles
-    console.log('Creando roles...')
+    
     const roles = [
       {
         nombre: 'administrador',
@@ -69,10 +65,7 @@ const initializeDatabase = async () => {
     ]
 
     const rolesCreados = await Rol.insertMany(roles)
-    console.log('Roles creados exitosamente')
-
-    // Crear ramas
-    console.log('Creando ramas...')
+    
     const ramas = [
       {
         nombre: 'manada',
@@ -101,10 +94,7 @@ const initializeDatabase = async () => {
     ]
 
     const ramasCreadas = await Rama.insertMany(ramas)
-    console.log('Ramas creadas exitosamente')
-
-    // Crear persona administrador
-    console.log('Creando persona administrador...')
+    
     const personaAdmin = await Persona.create({
       nombre: 'Administrador',
       apellido: 'Sistema',
@@ -122,14 +112,12 @@ const initializeDatabase = async () => {
       activo: true,
       deleted: false,
     })
-
-    // Crear usuario administrador
-    console.log('Creando usuario administrador...')
+    
     const rolAdmin = rolesCreados.find((rol) => rol.nombre === 'administrador')
 
     const usuarioAdmin = await Usuario.create({
       username: 'admin',
-      password: 'admin123', // Se hasheará automáticamente
+      password: 'admin123',
       persona: personaAdmin._id,
       rol: rolAdmin._id,
     })

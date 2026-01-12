@@ -3,10 +3,6 @@ const path = require('path')
 const fs = require('fs')
 const logger = require('../utils/logger')
 
-/**
- * Configuración de almacenamiento para archivos
- * Organiza los archivos por año en subdirectorios
- */
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     const year = new Date().getFullYear()
@@ -14,8 +10,6 @@ const storage = multer.diskStorage({
       process.env.UPLOAD_PATH || './uploads',
       year.toString()
     )
-
-    // Crear directorio si no existe
     if (!fs.existsSync(uploadPath)) {
       fs.mkdirSync(uploadPath, { recursive: true })
       logger.info(`Directorio de uploads creado: ${uploadPath}`)
@@ -39,12 +33,6 @@ const storage = multer.diskStorage({
   },
 })
 
-/**
- * Filtro para validar tipos de archivo permitidos
- * @param {Object} req - Request object
- * @param {Object} file - File object from multer
- * @param {Function} cb - Callback function
- */
 const fileFilter = (req, file, cb) => {
   const allowedMimeTypes = [
     'image/jpeg',
@@ -68,9 +56,6 @@ const fileFilter = (req, file, cb) => {
   }
 }
 
-/**
- * Configuración principal de multer para uploads
- */
 const uploadConfig = multer({
   storage: storage,
   limits: {
@@ -80,23 +65,10 @@ const uploadConfig = multer({
   fileFilter: fileFilter,
 })
 
-/**
- * Middleware para subida de comprobantes (archivo único)
- */
 const uploadComprobante = uploadConfig.single('comprobante')
 
-/**
- * Middleware para subida múltiple de archivos (si es necesario en el futuro)
- */
 const uploadMultiple = uploadConfig.array('archivos', 5) // Máximo 5 archivos
 
-/**
- * Middleware para manejo de errores de multer
- * @param {Error} error - Error de multer
- * @param {Object} req - Request object
- * @param {Object} res - Response object
- * @param {Function} next - Next middleware function
- */
 const handleUploadError = (error, req, res, next) => {
   if (error instanceof multer.MulterError) {
     logger.error('Error de Multer', {
@@ -145,12 +117,6 @@ const handleUploadError = (error, req, res, next) => {
   next()
 }
 
-/**
- * Middleware combinado para upload con manejo de errores
- * @param {Object} req - Request object
- * @param {Object} res - Response object
- * @param {Function} next - Next middleware function
- */
 const uploadComprobanteWithErrorHandling = (req, res, next) => {
   uploadComprobante(req, res, (error) => {
     handleUploadError(error, req, res, next)

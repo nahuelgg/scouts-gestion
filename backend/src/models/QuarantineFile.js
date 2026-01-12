@@ -3,14 +3,6 @@ const {
   applyQuarantineMiddleware,
 } = require('../middleware/quarantineMiddleware')
 
-/**
- * Modelo de archivo en cuarentena
- * Define solo el esquema de datos - la lógica de negocio está en los servicios
- *
- * @model QuarantineFile
- * @author Sistema de Gestión Scouts
- * @version 1.0.0
- */
 const quarantineFileSchema = new mongoose.Schema(
   {
     // Identificador único de la cuarentena
@@ -20,8 +12,6 @@ const quarantineFileSchema = new mongoose.Schema(
       unique: true,
       index: true,
     },
-
-    // Información del archivo original
     originalName: {
       type: String,
       required: true,
@@ -51,8 +41,6 @@ const quarantineFileSchema = new mongoose.Schema(
       required: true,
       index: true, // Para detección de duplicados
     },
-
-    // Información de riesgo y validación
     riskLevel: {
       type: String,
       required: true,
@@ -156,8 +144,6 @@ const quarantineFileSchema = new mongoose.Schema(
         required: true,
       },
     },
-
-    // Información de procesamiento (cuando sea aprobado/rechazado)
     processingInfo: {
       processedBy: {
         type: mongoose.Schema.Types.ObjectId,
@@ -187,8 +173,6 @@ const quarantineFileSchema = new mongoose.Schema(
         maxLength: 1000,
       },
     },
-
-    // Información adicional para archivos aprobados
     approvalInfo: {
       finalPath: {
         type: String,
@@ -253,8 +237,6 @@ quarantineFileSchema.virtual('riskInfo').get(function () {
       riskDescriptions[this.riskLevel] || 'Nivel de riesgo desconocido',
   }
 })
-
-// Configurar virtuals en JSON
 quarantineFileSchema.set('toJSON', { virtuals: true })
 quarantineFileSchema.set('toObject', { virtuals: true })
 

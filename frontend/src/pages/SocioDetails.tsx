@@ -30,8 +30,6 @@ const SocioDetails: React.FC = () => {
   const canManage = ['administrador', 'jefe de grupo', 'jefe de rama'].includes(
     user?.rol?.nombre || ''
   )
-
-  // Función para verificar si puede gestionar esta persona específica
   const canManageThisPersona = () => {
     if (!currentPersona) return false
 
@@ -51,8 +49,6 @@ const SocioDetails: React.FC = () => {
       if (!currentPersona.rama) {
         return false
       }
-
-      // Verificar que la rama de la persona coincida con la rama del jefe
       return currentPersona.rama._id === user.persona.rama._id
     }
 

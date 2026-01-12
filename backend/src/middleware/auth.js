@@ -2,20 +2,10 @@ const jwt = require('jsonwebtoken')
 const Usuario = require('../models/Usuario')
 const logger = require('../utils/logger')
 
-// =============================================================================
-// FUNCIONES HELPER COMUNES
-// =============================================================================
-
-/**
- * Verifica si un usuario tiene acceso completo (administrador o jefe de grupo)
- */
 const hasFullAccess = (user) => {
   return user?.rol?.permisos?.includes('acceso_completo')
 }
 
-/**
- * Verifica si un usuario es jefe de rama con acceso a su rama
- */
 const isJefeDeRamaWithAccess = (user) => {
   return (
     user?.rol?.nombre === 'jefe de rama' &&
@@ -23,16 +13,10 @@ const isJefeDeRamaWithAccess = (user) => {
   )
 }
 
-/**
- * Obtiene los roles con acceso completo
- */
 const getFullAccessRoles = () => {
   return ['administrador', 'jefe de grupo', 'jefe de rama']
 }
 
-/**
- * Verifica ownership de rama para un pago específico
- */
 const checkPagoRamaOwnership = async (pagoId, userRamaId) => {
   const Pago = require('../models/Pago')
 
@@ -66,15 +50,11 @@ const checkPagoRamaOwnership = async (pagoId, userRamaId) => {
   }
 }
 
-/**
- * Verifica acceso restringido para personas
- */
 const checkPersonaRestrictedAccess = async (req) => {
   const { method, params, query, user, baseUrl } = req
 
   if (baseUrl !== '/api/personas') return { allowed: true }
 
-  // Para GET de personas, forzar filtro por DNI del usuario
   if (method === 'GET' && !params.id) {
     if (!query.dni) {
       req.query.dni = user.persona.dni
@@ -87,7 +67,6 @@ const checkPersonaRestrictedAccess = async (req) => {
     }
   }
 
-  // Para acceso a una persona específica por ID
   if (params.id) {
     const Persona = require('../models/Persona')
     try {
@@ -121,18 +100,14 @@ const checkPersonaRestrictedAccess = async (req) => {
   return { allowed: true }
 }
 
-/**
- * Verifica acceso restringido para pagos
- */
 const checkPagoRestrictedAccess = async (req) => {
   const { method, params, query, user, baseUrl } = req
 
   if (baseUrl !== '/api/pagos') return { allowed: true }
 
-  // Para GET de lista de pagos, filtrar por su propio socio
   if (method === 'GET' && !params.id) {
     req.query.socio = user.persona._id.toString()
-    req.query.includeDeleted = 'false' // Los socios no ven pagos eliminados
+    req.query.includeDeleted = 'false'
   }
 
   // Para GET de pago específico por ID, verificar que sea su propio pago
@@ -177,10 +152,6 @@ const checkPagoRestrictedAccess = async (req) => {
   return { allowed: true }
 }
 
-// =============================================================================
-// MIDDLEWARES PRINCIPALES
-// =============================================================================
-
 const protect = async (req, res, next) => {
   let token
 
@@ -189,13 +160,8 @@ const protect = async (req, res, next) => {
     req.headers.authorization.startsWith('Bearer')
   ) {
     try {
-      // Obtener token del header
       token = req.headers.authorization.split(' ')[1]
-
-      // Verificar token
       const decoded = jwt.verify(token, process.env.JWT_SECRET)
-
-      // Obtener usuario del token
       req.user = await Usuario.findById(decoded.id)
         .populate({
           path: 'persona',
@@ -224,11 +190,12 @@ const protect = async (req, res, next) => {
   }
 
   if (!token) {
-    res.status(401).json({ message: 'No autorizado, sin token' })
+    return res
+      .status(401)
+      .json({ message: 'No autorizado, sin token' })
   }
 }
 
-// Middleware para verificar roles específicos
 const authorize = (...roles) => {
   return (req, res, next) => {
     if (!req.user) {
@@ -245,7 +212,6 @@ const authorize = (...roles) => {
   }
 }
 
-// Middleware para verificar permisos específicos
 const requirePermission = (permiso) => {
   return (req, res, next) => {
     if (!req.user) {
@@ -262,7 +228,6 @@ const requirePermission = (permiso) => {
   }
 }
 
-// Middleware para verificar acceso a rama específica
 const checkRamaAccess = async (req, res, next) => {
   if (!req.user) {
     return res.status(401).json({ message: 'No autorizado' })
@@ -271,17 +236,14 @@ const checkRamaAccess = async (req, res, next) => {
   const userRole = req.user.rol.nombre
   const userPermissions = req.user.rol.permisos
 
-  // Administrador y Jefe de Grupo tienen acceso completo
   if (userPermissions.includes('acceso_completo')) {
     return next()
   }
 
-  // Jefe de Rama solo puede acceder a su rama
   if (
     userRole === 'jefe de rama' &&
     userPermissions.includes('acceso_rama_propia')
   ) {
-    // Verificar si está accediendo a datos de su rama
     const ramaId = req.params.ramaId || req.body.rama || req.query.rama
 
     if (
@@ -294,7 +256,6 @@ const checkRamaAccess = async (req, res, next) => {
       })
     }
 
-    // Si está gestionando una persona, verificar que pertenezca a su rama
     if (req.params.id || req.body.personaId || req.body.socio) {
       const Persona = require('../models/Persona')
       const personaId = req.params.id || req.body.personaId || req.body.socio
@@ -320,7 +281,6 @@ const checkRamaAccess = async (req, res, next) => {
   next()
 }
 
-// Middleware combinado para verificar acceso completo
 const requireFullAccess = (req, res, next) => {
   if (!req.user) {
     return res.status(401).json({ message: 'No autorizado' })
@@ -335,7 +295,6 @@ const requireFullAccess = (req, res, next) => {
   next()
 }
 
-// Middleware para usuarios restringidos - aplica a todos EXCEPTO administrador, jefe de grupo y jefe de rama
 const checkRestrictedAccess = async (req, res, next) => {
   if (!req.user) {
     return res.status(401).json({ message: 'No autorizado' })
@@ -344,21 +303,16 @@ const checkRestrictedAccess = async (req, res, next) => {
   const userRole = req.user.rol.nombre
   const fullAccessRoles = getFullAccessRoles()
 
-  // Si el usuario tiene un rol con acceso completo, permitir sin restricciones
   if (fullAccessRoles.includes(userRole)) {
     return next()
   }
 
-  // Para todos los demás roles (incluido 'socio'), aplicar restricciones
-  // Verificar acceso a personas
   const personaCheck = await checkPersonaRestrictedAccess(req)
   if (!personaCheck.allowed) {
     return res.status(personaCheck.status).json({
       message: personaCheck.error,
     })
   }
-
-  // Verificar acceso a pagos
   const pagoCheck = await checkPagoRestrictedAccess(req)
   if (!pagoCheck.allowed) {
     return res.status(pagoCheck.status).json({
@@ -369,7 +323,6 @@ const checkRestrictedAccess = async (req, res, next) => {
   next()
 }
 
-// Middleware combinado que verifica permisos o aplica restricciones
 const requirePermissionOrRestricted = (permiso) => {
   return async (req, res, next) => {
     if (!req.user) {
@@ -378,31 +331,20 @@ const requirePermissionOrRestricted = (permiso) => {
 
     const userPermissions = req.user.rol.permisos
 
-    // Si tiene el permiso requerido, permitir acceso completo
     if (userPermissions.includes(permiso)) {
       return next()
     }
 
-    // Si no tiene el permiso pero tiene acceso limitado, aplicar restricciones
     if (userPermissions.includes('acceso_limitado')) {
       return checkRestrictedAccess(req, res, next)
     }
 
-    // Si no tiene ningún permiso relevante, denegar acceso
     return res.status(403).json({
       message: `No tiene permiso: ${permiso}`,
     })
   }
 }
 
-// =============================================================================
-// FACTORY FUNCTIONS PARA MIDDLEWARES ESPECIALIZADOS
-// =============================================================================
-
-/**
- * Factory function para crear middlewares de acceso a pagos
- * Elimina duplicación entre requireDeletePagoAccess y requireRestorePagoAccess
- */
 const createPagoAccessMiddleware = (action) => {
   const actionMessages = {
     delete: {
@@ -426,12 +368,10 @@ const createPagoAccessMiddleware = (action) => {
       return res.status(401).json({ message: 'No autorizado' })
     }
 
-    // Acceso completo para administradores y jefes de grupo
     if (hasFullAccess(req.user)) {
       return next()
     }
 
-    // Jefe de rama puede acceder a pagos de su rama específica
     if (isJefeDeRamaWithAccess(req.user)) {
       const result = await checkPagoRamaOwnership(
         req.params.id,
@@ -445,14 +385,11 @@ const createPagoAccessMiddleware = (action) => {
       return next()
     }
 
-    // Para todos los demás casos, denegar acceso
     return res.status(403).json({
       message: `No tiene permisos para ${messages.permission}`,
     })
   }
 }
-
-// Crear middlewares específicos usando la factory function
 const requireDeletePagoAccess = createPagoAccessMiddleware('delete')
 const requireRestorePagoAccess = createPagoAccessMiddleware('restore')
 

@@ -8,8 +8,6 @@ import { Pago, FetchPagosParams } from '../types'
 export const usePagosActions = () => {
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
-
-  // Obtener estado de paginación del store
   const { currentPage, totalPages, total } = useAppSelector(
     (state) => state.pagos
   )
@@ -58,7 +56,6 @@ export const usePagosActions = () => {
       setPagoToDelete(null)
       loadPagos()
     } catch (error) {
-      console.error('Error eliminando pago:', error)
       message.error('Error eliminando pago')
     } finally {
       setActionLoading(false)
@@ -86,7 +83,6 @@ export const usePagosActions = () => {
       setPagoToRestore(null)
       loadPagos()
     } catch (error) {
-      console.error('Error restaurando pago:', error)
       message.error('Error restaurando pago')
     } finally {
       setActionLoading(false)

@@ -12,9 +12,6 @@ const {
   sendSuccessResponse,
 } = require('../utils/errorHandlers')
 
-// @desc    Obtener todas las personas
-// @route   GET /api/personas
-// @access  Private
 const getPersonas = async (req, res) => {
   try {
     const {
@@ -94,14 +91,10 @@ const getPersonas = async (req, res) => {
       total,
     })
   } catch (error) {
-    console.error('Error en getPersonas:', error)
     res.status(500).json({ message: 'Error del servidor' })
   }
 }
 
-// @desc    Obtener una persona por ID
-// @route   GET /api/personas/:id
-// @access  Private
 const getPersonaById = async (req, res) => {
   try {
     const persona = await Persona.findOne({
@@ -119,9 +112,6 @@ const getPersonaById = async (req, res) => {
   }
 }
 
-// @desc    Crear nueva persona
-// @route   POST /api/personas
-// @access  Private (jefe de rama, administrador)
 const createPersona = async (req, res) => {
   try {
     const {
@@ -135,20 +125,14 @@ const createPersona = async (req, res) => {
       rama,
       funcion,
     } = req.body
-
-    // Validar campos requeridos
     const validation = validateRequiredPersonaFields(req.body)
     if (!validation.isValid) {
       return handleValidationError(res, validation.message)
     }
-
-    // Verificar si el DNI ya existe
     const isDNIUnique = await validateUniqueDNI(dni)
     if (!isDNIUnique) {
       return handleValidationError(res, 'Ya existe una persona con ese DNI')
     }
-
-    // Verificar que la rama existe
     const isRamaValid = await validateRamaExists(rama)
     if (!isRamaValid) {
       return handleValidationError(res, 'Rama no válida')
@@ -179,9 +163,6 @@ const createPersona = async (req, res) => {
   }
 }
 
-// @desc    Actualizar persona
-// @route   PUT /api/personas/:id
-// @access  Private (jefe de rama, administrador)
 const updatePersona = async (req, res) => {
   try {
     const {
@@ -204,8 +185,6 @@ const updatePersona = async (req, res) => {
     if (!persona) {
       return res.status(404).json({ message: 'Persona no encontrada' })
     }
-
-    // Verificar si el DNI ya existe en otra persona
     if (dni && dni !== persona.dni) {
       const personaExistente = await Persona.findOne({ dni, deleted: false })
       if (personaExistente) {
@@ -214,16 +193,12 @@ const updatePersona = async (req, res) => {
           .json({ message: 'Ya existe una persona con ese DNI' })
       }
     }
-
-    // Verificar que la rama existe
     if (rama) {
       const ramaExistente = await Rama.findById(rama)
       if (!ramaExistente) {
         return res.status(400).json({ message: 'Rama no válida' })
       }
     }
-
-    // Actualizar campos
     persona.nombre = nombre || persona.nombre
     persona.apellido = apellido || persona.apellido
     persona.dni = dni || persona.dni
@@ -245,14 +220,10 @@ const updatePersona = async (req, res) => {
       persona: personaActualizada,
     })
   } catch (error) {
-    console.error(error)
     res.status(500).json({ message: 'Error del servidor' })
   }
 }
 
-// @desc    Eliminar persona (soft delete)
-// @route   DELETE /api/personas/:id
-// @access  Private (administrador)
 const deletePersona = async (req, res) => {
   try {
     const persona = await Persona.findOne({
@@ -281,14 +252,10 @@ const deletePersona = async (req, res) => {
       persona: persona,
     })
   } catch (error) {
-    console.error(error)
     res.status(500).json({ message: 'Error del servidor' })
   }
 }
 
-// @desc    Restaurar persona eliminada
-// @route   PATCH /api/personas/:id/restore
-// @access  Private (administrador)
 const restorePersona = async (req, res) => {
   try {
     const persona = await Persona.findOne({
@@ -318,7 +285,6 @@ const restorePersona = async (req, res) => {
       persona: persona,
     })
   } catch (error) {
-    console.error(error)
     res.status(500).json({ message: 'Error del servidor' })
   }
 }

@@ -5,7 +5,6 @@ require('dotenv').config()
 const connectDB = require('./config/database')
 const logger = require('./utils/logger')
 
-// Middlewares centralizados
 const {
   createHelmetMiddleware,
   createRateLimitMiddleware,
@@ -19,7 +18,6 @@ const {
   addRequestTiming,
 } = require('./middleware/requestLogger')
 
-// Configuración centralizada
 const CONFIG = {
   FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:3000',
   BACKEND_URL: process.env.BACKEND_URL || 'http://localhost:3001',
@@ -31,22 +29,15 @@ const CONFIG = {
   ],
   CORS_METHODS: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   CORS_HEADERS: ['Content-Type', 'Authorization', 'x-requested-with'],
-  CACHE_MAX_AGE: process.env.CACHE_MAX_AGE || '31536000', // 1 año por defecto
-
-  // Configuración de rate limiting
-  RATE_LIMIT_WINDOW: parseInt(process.env.RATE_LIMIT_WINDOW) || 15 * 60 * 1000, // 15 minutos
-  RATE_LIMIT_MAX: parseInt(process.env.RATE_LIMIT_MAX) || 1000, // 1000 requests
-
-  // Configuración de body parser
+  CACHE_MAX_AGE: process.env.CACHE_MAX_AGE || '31536000',
+  RATE_LIMIT_WINDOW: parseInt(process.env.RATE_LIMIT_WINDOW) || 15 * 60 * 1000,
+  RATE_LIMIT_MAX: parseInt(process.env.RATE_LIMIT_MAX) || 1000,
   BODY_LIMIT: process.env.BODY_LIMIT || '10mb',
-
-  // Configuración de producción
   PRODUCTION_ORIGINS: process.env.PRODUCTION_ORIGINS?.split(',') || [
     'https://tu-dominio.com',
   ],
 }
 
-// Función helper para configurar headers CORS
 const setCorsHeaders = (res, methods = ['GET', 'OPTIONS']) => {
   res.header('Access-Control-Allow-Origin', CONFIG.FRONTEND_URL)
   res.header('Access-Control-Allow-Methods', methods.join(', '))
@@ -54,7 +45,6 @@ const setCorsHeaders = (res, methods = ['GET', 'OPTIONS']) => {
   res.header('Access-Control-Allow-Credentials', 'true')
 }
 
-// Función helper para configurar Content-Type basado en extensión
 const setContentType = (res, filePath) => {
   if (filePath.endsWith('.png')) {
     res.setHeader('Content-Type', 'image/png')
@@ -69,7 +59,6 @@ const setContentType = (res, filePath) => {
   }
 }
 
-// Importar rutas
 const authRoutes = require('./routes/auth')
 const personaRoutes = require('./routes/personas')
 const pagoRoutes = require('./routes/pagos')
@@ -78,10 +67,7 @@ const usuarioRoutes = require('./routes/usuarios')
 
 const app = express()
 
-// Conectar a la base de datos
 connectDB()
-
-// Middleware de seguridad
 app.use(additionalSecurity)
 app.use(createHelmetMiddleware(CONFIG))
 
@@ -106,21 +92,14 @@ app.use(getRequestLogger())
 app.use(
   '/uploads',
   (req, res, next) => {
-    // Configurar headers CORS específicos para archivos estáticos
     setCorsHeaders(res)
-
-    // Headers específicos para permitir el acceso cross-origin a imágenes
     res.header('Cross-Origin-Resource-Policy', 'cross-origin')
     res.header('Cross-Origin-Embedder-Policy', 'unsafe-none')
-
-    // Configurar headers de cache
     res.header('Cache-Control', `public, max-age=${CONFIG.CACHE_MAX_AGE}`)
     res.header(
       'Expires',
       new Date(Date.now() + parseInt(CONFIG.CACHE_MAX_AGE) * 1000).toUTCString()
     )
-
-    // Configurar Content-Type basado en la extensión del archivo
     setContentType(res, req.path)
 
     next()
@@ -128,21 +107,14 @@ app.use(
   express.static(path.join(__dirname, '../uploads'))
 )
 
-// Rutas con rate limiting específico
 app.use('/api/auth', createAuthRateLimitMiddleware(CONFIG), authRoutes)
 app.use('/api/personas', personaRoutes)
 app.use('/api/pagos', pagoRoutes)
 app.use('/api/ramas', ramaRoutes)
 app.use('/api/usuarios', usuarioRoutes)
 app.use('/api/roles', require('./routes/roles'))
-
-// Health checks avanzados (sin rate limiting para load balancers)
 app.use('/api/health', require('./routes/health'))
-
-// Monitoreo y alertas (requiere autenticación)
 app.use('/api/monitoring', require('./routes/monitoring'))
-
-// Middleware de manejo de errores
 app.use((err, req, res, next) => {
   logger.error('Error no manejado:', {
     error: err.message,
@@ -158,7 +130,6 @@ app.use((err, req, res, next) => {
   })
 })
 
-// Manejar rutas no encontradas
 app.use('*', (req, res) => {
   res.status(404).json({ message: 'Ruta no encontrada' })
 })
@@ -170,9 +141,8 @@ app.listen(PORT, () => {
   logger.info(`Entorno: ${process.env.NODE_ENV}`)
   logger.info(`Frontend URL: ${CONFIG.FRONTEND_URL}`)
 
-  // Iniciar servicio de monitoreo después de que el servidor esté listo
   setTimeout(() => {
     const monitoringService = require('./services/monitoring/MonitoringService')
     monitoringService.start()
-  }, 2000) // Esperar 2 segundos para que todo esté inicializado
+  }, 2000)
 })

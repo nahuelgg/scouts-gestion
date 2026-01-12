@@ -47,8 +47,6 @@ const SocioForm: React.FC = () => {
   const [loadingRamas, setLoadingRamas] = useState(false)
 
   const isEditing = !!id
-
-  // Verificar si el usuario es jefe de rama
   const isJefeDeRama = user?.rol?.nombre === 'jefe de rama'
   const userRamaId = user?.persona?.rama?._id
 

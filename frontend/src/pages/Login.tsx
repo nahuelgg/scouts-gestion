@@ -23,7 +23,6 @@ const Login: React.FC = () => {
   }, [isAuthenticated, navigate])
 
   useEffect(() => {
-    // Limpiar errores al montar el componente
     dispatch(clearError())
   }, []) // Removido dispatch
 

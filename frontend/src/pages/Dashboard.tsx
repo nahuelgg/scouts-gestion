@@ -39,8 +39,6 @@ const Dashboard: React.FC = () => {
   )
 
   const loading = personasLoading || pagosLoading
-
-  // Función para cargar los datos
   const loadDashboardData = useCallback(
     (force = false) => {
       // Solo cargar personas si no están cargadas o se fuerza la actualización
@@ -52,12 +50,10 @@ const Dashboard: React.FC = () => {
       if (force || pagos.length === 0) {
         dispatch(
           fetchPagos({
-            includeDeleted: true, // ✅ Incluir eliminados para estadísticas correctas
-            limit: 200, // Límite optimizado
+            includeDeleted: true,
+            limit: 200,
           })
-        ).catch((error) => {
-          console.error('Error cargando datos del Dashboard:', error)
-          // En caso de error, intentar cargar sin filtro de mes
+        ).catch(() => {
           dispatch(fetchPagos({ limit: 100, includeDeleted: true }))
         })
       }
@@ -112,8 +108,6 @@ const Dashboard: React.FC = () => {
       totalRecaudado,
     }
   }, [personas, pagos])
-
-  // Obtener pagos recientes para la tabla (solo pagos activos)
   const recentPayments = useMemo(() => {
     const pagosActivos = pagos.filter((pago) => !pago.deleted)
     return [...pagosActivos]
